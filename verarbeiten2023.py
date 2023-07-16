@@ -28,6 +28,11 @@ def truncateKreis():
 
 
 def StrassentabelleAusgeben(Gemeindename):
+    
+    #
+    #update gebref set geom31466=st_transform(geom25832,'EPSG:25832','EPSG:31466');
+
+    #
     curgem = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL = "select * from gebref_schluessel where field_6='{}'".format(Gemeindename)
     print(SQL)
