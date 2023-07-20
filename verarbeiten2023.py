@@ -17,7 +17,7 @@ print("Verbindung hergestellt")
 
 # Funktionen definieren
 
-def StrassentabelleAusgeben(Gemeindename):
+def StrassentabelleAusgeben(Kreis,Gemeindename):
     
     curgem = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL = "select * from gebref where gmd='{}'".format(Gemeindename)
@@ -31,7 +31,7 @@ def StrassentabelleAusgeben(Gemeindename):
         print(row_count)
         zeile1 = row['landschl'] + ";" + row['regbezschl'] + ";" + row['kreisschl'] + ";" + row['gmdschl'] + ";"
 
-    F2 = open("./output/" + Gemeindename + "_Strassen.txt", "w", encoding="windows-1252", newline='\r\n')
+    F2 = open("./output/" + Kreis + "_" + Gemeindename + "_Strassen.txt", "w", encoding="windows-1252", newline='\r\n')
     curstrasse = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL2 = "select strschl, str from gebref where gmd='" + Gemeindename + "' order by str"
     curstrasse.execute(SQL2)
@@ -44,7 +44,7 @@ def StrassentabelleAusgeben(Gemeindename):
     F2.close()
 
 
-def Hausnummerntabelle(Gemeindename):
+def Hausnummerntabelle(Kreis,Gemeindename):
     curgem = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL = "select * from gebref where gmd='{}'".format(Gemeindename)
     print(SQL)
@@ -57,7 +57,7 @@ def Hausnummerntabelle(Gemeindename):
         print(row_count)
         zeile1 = row['landschl'] + ";" + row['regbezschl'] + ";" + row['kreisschl'] + ";" + row['gmdschl'] + ";"
 
-    F2 = open("./output/" + Gemeindename + "_Hausnummern.txt", "w", encoding="windows-1252")
+    F2 = open("./output/" + Kreis + "_"  + Gemeindename + "_Hausnummern.txt", "w", encoding="windows-1252")
     curstrasse = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL2 = "select strschl, hnr, adz, st_x(geom31466)::text as x, st_y(geom31466)::text as y  from " \
            "gebref where gmd='" + Gemeindename + "' order by str,hnr"
@@ -276,20 +276,22 @@ def ausfuehren(truncGebref,truncKreis,importGebref,importKreis,exportCebius):
     # "Nümbrecht", "Engelskirchen", "Waldbröl", "Morsbach", "Marienheide")
 
     # Gemeinden aus Datenbank auslesen
-    SQL = "select distinct kreis, gmd from gebref;select distinct gmd from gebrefselect distinct gmd from gebrefselect distinct gmd from gebrefselect distinct gmd from gebrefselect distinct gmd from gebref"
+    SQL = "select distinct kreis, gmd from gebref"
     curgemeinde = conn.cursor()
     curgemeinde.execute(SQL)
     # print(SQL2)
-    gemeinden = [r[0] for r in curgemeinde.fetchall()]
+    gemeinden = curgemeinde.fetchall()
     print(gemeinden)
+    for gemeinde in gemeinden:
+        print (gemeinde[0], gemeinde[1])
 
 
 
     if (exportCebius):
         for gemeinde in gemeinden:
             print(gemeinde)
-            StrassentabelleAusgeben(gemeinde)
-            Hausnummerntabelle(gemeinde)
+            StrassentabelleAusgeben(gemeinde[0], gemeinde [1])
+            Hausnummerntabelle(gemeinde[0], gemeinde [1])
     cur.close()
     conn.close()
 
