@@ -32,7 +32,7 @@ def StrassentabelleAusgeben(Kreis,Gemeindename):
         print(row_count)
         zeile1 = row['landschl'] + ";" + row['regbezschl'] + ";" + row['kreisschl'] + ";" + row['gmdschl'] + ";"
 
-    F2 = open("./output/" + Kreis + "_" + Gemeindename + "_Strassen.txt", "w", encoding="windows-1252", newline='\r\n')
+    F2 = open("./output/" + slugify(Kreis) + "_" + slugify(Gemeindename) + "_Strassen.txt", "w", encoding="windows-1252", newline='\r\n')
     curstrasse = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL2 = "select strschl, str from gebref where gmd='" + Gemeindename + "' order by str"
     curstrasse.execute(SQL2)
@@ -58,7 +58,7 @@ def Hausnummerntabelle(Kreis,Gemeindename):
         print(row_count)
         zeile1 = row['landschl'] + ";" + row['regbezschl'] + ";" + row['kreisschl'] + ";" + row['gmdschl'] + ";"
 
-    F2 = open("./output/" + Kreis + "_"  + Gemeindename + "_Hausnummern.txt", "w", encoding="windows-1252", newline='\r\n')
+    F2 = open("./output/"  + slugify(Kreis) + "_" + slugify(Gemeindename) + "_Hausnummern.txt", "w", encoding="windows-1252", newline='\r\n')
     curstrasse = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL2 = "select strschl, hnr, adz, st_x(geom31466)::text as x, st_y(geom31466)::text as y  from " \
            "gebref where gmd='" + Gemeindename + "' order by str,hnr"
@@ -277,7 +277,7 @@ def ausfuehren(truncGebref,truncKreis,importGebref,importKreis,exportCebius):
     # "Nümbrecht", "Engelskirchen", "Waldbröl", "Morsbach", "Marienheide")
 
     # Gemeinden aus Datenbank auslesen
-    SQL = "select distinct kreis, gmd from gebref"
+    SQL = "select distinct kreis, gmd from gebref order by kreis, gmd"
     curgemeinde = conn.cursor()
     curgemeinde.execute(SQL)
     # print(SQL2)
@@ -291,8 +291,8 @@ def ausfuehren(truncGebref,truncKreis,importGebref,importKreis,exportCebius):
     if (exportCebius):
         for gemeinde in gemeinden:
             print(gemeinde)
-            StrassentabelleAusgeben(slugify(gemeinde[0]), slugify(gemeinde [1]))
-            Hausnummerntabelle(slugify(gemeinde[0]), slugify(gemeinde [1]))
+            StrassentabelleAusgeben(gemeinde[0],gemeinde [1])
+            Hausnummerntabelle(gemeinde[0], gemeinde [1])
     cur.close()
     conn.close()
 
