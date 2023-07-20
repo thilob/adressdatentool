@@ -31,7 +31,7 @@ def StrassentabelleAusgeben(Gemeindename):
         print(row_count)
         zeile1 = row['landschl'] + ";" + row['regbezschl'] + ";" + row['kreisschl'] + ";" + row['gmdschl'] + ";"
 
-    F2 = open(Gemeindename + "_Strassen.txt", "w", encoding="windows-1252", newline='\r\n')
+    F2 = open("./output/" + Gemeindename + "_Strassen.txt", "w", encoding="windows-1252", newline='\r\n')
     curstrasse = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL2 = "select strschl, str from gebref where gmd='" + Gemeindename + "' order by str"
     curstrasse.execute(SQL2)
@@ -57,7 +57,7 @@ def Hausnummerntabelle(Gemeindename):
         print(row_count)
         zeile1 = row['landschl'] + ";" + row['regbezschl'] + ";" + row['kreisschl'] + ";" + row['gmdschl'] + ";"
 
-    F2 = open(Gemeindename + "_Hausnummern.txt", "w", encoding="windows-1252")
+    F2 = open("./output/" + Gemeindename + "_Hausnummern.txt", "w", encoding="windows-1252")
     curstrasse = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL2 = "select strschl, hnr, adz, st_x(geom31466)::text as x, st_y(geom31466)::text as y  from " \
            "gebref where gmd='" + Gemeindename + "' order by str,hnr"
@@ -271,14 +271,23 @@ def ausfuehren(truncGebref,truncKreis,importGebref,importKreis,exportCebius):
     if (importKreis):
         kreisdaten_einlesen()
 
-    gemeinden = (
-    "Radevormwald", "Hückeswagen", "Wipperfürth", "Lindlar", "Gummersbach", "Bergneustadt", "Wiehl", "Reichshof",
-    "Nümbrecht", "Engelskirchen", "Waldbröl", "Morsbach", "Marienheide")
+    # gemeinden = (
+    # "Radevormwald", "Hückeswagen", "Wipperfürth", "Lindlar", "Gummersbach", "Bergneustadt", "Wiehl", "Reichshof",
+    # "Nümbrecht", "Engelskirchen", "Waldbröl", "Morsbach", "Marienheide")
+
+    # Gemeinden aus Datenbank auslesen
+    SQL = "select distinct kreis, gmd from gebref;select distinct gmd from gebrefselect distinct gmd from gebrefselect distinct gmd from gebrefselect distinct gmd from gebrefselect distinct gmd from gebref"
+    curgemeinde = conn.cursor()
+    curgemeinde.execute(SQL)
+    # print(SQL2)
+    gemeinden = [r[0] for r in curgemeinde.fetchall()]
+    print(gemeinden)
 
 
 
     if (exportCebius):
         for gemeinde in gemeinden:
+            print(gemeinde)
             StrassentabelleAusgeben(gemeinde)
             Hausnummerntabelle(gemeinde)
     cur.close()

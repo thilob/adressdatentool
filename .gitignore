@@ -1,2 +1,4 @@
 __pycache__/
 /gebref.txt
+/.vscode
+output/
