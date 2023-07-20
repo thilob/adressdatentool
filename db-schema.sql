@@ -1,4 +1,3 @@
---  pg_dump -U cebiusdaten -d cebiusdaten -Fp -c -C -s --if-exists                                                                                              ✔ 
 --
 -- PostgreSQL database dump
 --
@@ -98,13 +97,25 @@ CREATE TABLE public.gebref (
     ostwert numeric(9,3),
     nordwert numeric(10,3),
     datum character varying,
-    id uuid DEFAULT uuid_generate_v4(),
-    geom25832 geometry(Point,25832),
-    geom31466 geometry(Point,31466)
+    id uuid DEFAULT public.uuid_generate_v4(),
+    geom25832 public.geometry(Point,25832),
+    geom31466 public.geometry(Point,31466)
 );
 
 
 ALTER TABLE public.gebref OWNER TO cebiusdaten;
+
+--
+-- Name: gebref.geom25832; Type: TABLE; Schema: public; Owner: cebiusdaten
+--
+
+CREATE TABLE public."gebref.geom25832" (
+    id_0 integer NOT NULL,
+    geom25832 public.geometry(Point,25832)
+);
+
+
+ALTER TABLE public."gebref.geom25832" OWNER TO cebiusdaten;
 
 --
 -- Name: gebref.geom25832_id_0_seq; Type: SEQUENCE; Schema: public; Owner: cebiusdaten
@@ -143,8 +154,8 @@ CREATE TABLE public.gmadressen (
     nordwert character varying,
     nummernteil character varying,
     buchstaben character varying,
-    geom25832 geometry(Point,25832),
-    geom31466 geometry(Point,31466)
+    geom25832 public.geometry(Point,25832),
+    geom31466 public.geometry(Point,31466)
 );
 
 
@@ -193,4 +204,3 @@ GRANT TEMPORARY ON DATABASE cebiusdaten TO cebiusdaten WITH GRANT OPTION;
 --
 -- PostgreSQL database dump complete
 --
-
