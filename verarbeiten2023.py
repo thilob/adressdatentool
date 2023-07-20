@@ -4,6 +4,7 @@ import sys
 import psycopg2 as psycopg2
 import psycopg2.extras
 from PyQt5 import QtWidgets
+from slugify import slugify
 
 from DatenDialog import Ui_datenDialog
 
@@ -57,7 +58,7 @@ def Hausnummerntabelle(Kreis,Gemeindename):
         print(row_count)
         zeile1 = row['landschl'] + ";" + row['regbezschl'] + ";" + row['kreisschl'] + ";" + row['gmdschl'] + ";"
 
-    F2 = open("./output/" + Kreis + "_"  + Gemeindename + "_Hausnummern.txt", "w", encoding="windows-1252")
+    F2 = open("./output/" + Kreis + "_"  + Gemeindename + "_Hausnummern.txt", "w", encoding="windows-1252", newline='\r\n')
     curstrasse = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL2 = "select strschl, hnr, adz, st_x(geom31466)::text as x, st_y(geom31466)::text as y  from " \
            "gebref where gmd='" + Gemeindename + "' order by str,hnr"
@@ -290,8 +291,8 @@ def ausfuehren(truncGebref,truncKreis,importGebref,importKreis,exportCebius):
     if (exportCebius):
         for gemeinde in gemeinden:
             print(gemeinde)
-            StrassentabelleAusgeben(gemeinde[0], gemeinde [1])
-            Hausnummerntabelle(gemeinde[0], gemeinde [1])
+            StrassentabelleAusgeben(slugify(gemeinde[0]), slugify(gemeinde [1]))
+            Hausnummerntabelle(slugify(gemeinde[0]), slugify(gemeinde [1]))
     cur.close()
     conn.close()
 
