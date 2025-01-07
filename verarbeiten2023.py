@@ -1,10 +1,9 @@
 import re
 import sys
 import slugify
-
-import psycopg2 as psycopg2
+import psycopg2 
 import psycopg2.extras
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 from DatenDialog import Ui_datenDialog
 
 # Datenbankverbindung herstellen und Bewegungsdatentabellen leeren
