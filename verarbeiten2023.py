@@ -1,3 +1,5 @@
+"""Importe
+"""
 import re
 import sys
 import requests
@@ -9,18 +11,21 @@ import psycopg2.extras
 from PySide6 import QtWidgets
 from DatenDialog_ui import Ui_datenDialog
 
-
-# Datenbankverbindung herstellen und Bewegungsdatentabellen leeren
+"""Initialer Aufbau des Datenbank-Verbindung
+"""
 print("Programm gestartet")
 conn = psycopg2.connect("dbname=cebiusdaten user=cebiusdaten password=cebiusdaten")
 cur = conn.cursor()
-#cur.execute("truncate gmadressen")
-#cur.commit()
 print("Verbindung hergestellt")
 
-# Funktionen definieren
+
 
 def GebrefLadenUndEntpacken(url):
+    """falls aktiviert, läd die Funktion die gezippte Gebäudereferenzdatei herunter und entpackt sie
+
+    Args:
+        url (URL-String): Die zum Download verwendete URL. Kann in der GUI angepasst werden.
+    """
     print ("Gebäudereferenzen werden heruntergeladen....")
     r = requests.get(url, allow_redirects=True)
     open('gebref.zip', 'wb').write(r.content)
@@ -30,7 +35,6 @@ def GebrefLadenUndEntpacken(url):
     
 
 def StrassentabelleAusgeben(Kreis,Gemeindename):
-    
     curgem = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     SQL = "select * from gebref where gmd='{}'".format(Gemeindename)
     print(SQL)
