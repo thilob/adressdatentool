@@ -7,5 +7,5 @@ PySide6_Addons==6.8.1
 PySide6_Essentials==6.8.1
 requests==2.32.3
 shiboken6==6.8.1
-slugify==0.0.1
+unicode-slugify==0.0.1
 urllib3==2.3.0
