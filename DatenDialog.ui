@@ -42,78 +42,46 @@
   <widget class="QCheckBox" name="truncateGebref">
    <property name="geometry">
     <rect>
-     <x>100</x>
-     <y>110</y>
+     <x>20</x>
+     <y>170</y>
      <width>371</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>Gebref-Tabellen leeren</string>
+    <string>Gebäudereferenz-Tabellen leeren</string>
    </property>
    <property name="checked">
     <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="truncateKreis">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>140</y>
-     <width>261</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Kreistabelle leeren</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="importGebref">
    <property name="geometry">
     <rect>
-     <x>100</x>
-     <y>190</y>
-     <width>321</width>
+     <x>20</x>
+     <y>220</y>
+     <width>581</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>Gebref-Tabellen neu einlesen</string>
+    <string>Gebäudrefernz-Tabellen neu aus heruntergeladener Datei einlesen</string>
    </property>
    <property name="checked">
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QCheckBox" name="importKreis">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>220</y>
-     <width>201</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Kreistabelle neu einlesen</string>
-   </property>
-  </widget>
   <widget class="QCheckBox" name="exportCebius">
    <property name="geometry">
     <rect>
-     <x>100</x>
-     <y>270</y>
-     <width>281</width>
+     <x>20</x>
+     <y>300</y>
+     <width>481</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>Cebiusdateien ausgeben</string>
+    <string>Cebius-Straßen- und -hausnumern-Dateien ausgeben</string>
    </property>
    <property name="checked">
     <bool>true</bool>
@@ -122,14 +90,14 @@
   <widget class="QCheckBox" name="CheckboxGebrefHolen">
    <property name="geometry">
     <rect>
-     <x>100</x>
-     <y>20</y>
+     <x>20</x>
+     <y>90</y>
      <width>381</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
-    <string>Gebäudereferenzdatei neu laden</string>
+    <string>Gebäudereferenzdatei neu von Opengeodata NRW laden, URL:</string>
    </property>
    <property name="checked">
     <bool>true</bool>
@@ -138,14 +106,64 @@
   <widget class="QLineEdit" name="UrlGebrefHolen">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>50</y>
+     <x>20</x>
+     <y>110</y>
      <width>621</width>
      <height>25</height>
     </rect>
    </property>
    <property name="text">
     <string>https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt/gebref_txt/gebref_EPSG25832_ASCII.zip</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>20</y>
+     <width>581</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Cebius-Hausnummernprozessor</string>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>50</y>
+     <width>151</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Thilo Berger, 2025</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkBoxNurOberbergLaden">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>250</y>
+     <width>331</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>nur Dateien für den Oberbergischen Kreis laden</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>
