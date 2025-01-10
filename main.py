@@ -95,10 +95,6 @@ def HausnummerntabelleAusgeben(Kreis, Gemeindename):
     F2.close()
 
 
-def truncateGebref():
-    """Gebäudereferenztabellen leeren
-    """
-    cur.execute("truncate gebref")
 
 
 """ def gemeindeschluessel_einlesen():
@@ -199,7 +195,7 @@ def ausfuehren(importGebref,  exportCebius, gebrefHolen, gebrefUrl, checkBoxNurO
         gebaeudereferenzen_einlesen(checkBoxNurOberbergLaden)
 
     try:
-        os.remove("gebref.txt")
+      #  os.remove("gebref.txt")
         os.remove("gebref.zip")
     except OSError:
         print("Error while deleting file")
