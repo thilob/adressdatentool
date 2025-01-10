@@ -6,6 +6,6 @@ build/
 dist/
 venv/
 gebref.zip
-output/
+output/*
 doxygen/
 

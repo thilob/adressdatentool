@@ -32,6 +32,8 @@ def GebrefLadenUndEntpacken(url):
     print('Gebäudereferenzen werden entpackt...')
     shutil.unpack_archive("gebref.zip")
     print("Gebäudereferenzen wurden entpackt!")
+    if not (os.path.exists('output')):
+        os.mkdir('output')
 
 
 def StrassentabelleAusgeben(Kreis, Gemeindename):
@@ -184,6 +186,23 @@ class DatenDialog(QtWidgets.QMainWindow):
         exit(0)
 
 
+def AktualitätenAusgeben():
+    SQL="select distinct landschl,regbezschl,kreisschl,gmdschl,gmd from gebref order by landschl, regbezschl, kreisschl,gmdschl"  
+    curgemeinde=conn.cursor()
+    curgemeinde.execute(SQL)
+    gemeinden=curgemeinde.fetchall()
+    for gemeinde in gemeinden:
+        print (gemeinde[0] + ";" + gemeinde[1] + ";"  + gemeinde[2] + ";"  + gemeinde[3] + ";" + gemeinde[4] ,end=" ")
+        print (" - ", end= " ")
+        curmin=conn.cursor()
+        minsql="select min(datum), max(datum) from gebref where landschl=%s and regbezschl=%s and kreisschl=%s and gmdschl=%s"   
+        mindata=(gemeinde[0],gemeinde[1],gemeinde[2],gemeinde[3])
+        curmin.execute(minsql,mindata)
+        min=curmin.fetchall()
+        for amin in min:
+            print(amin[0] + " - " + amin[1])
+
+
 def ausfuehren(importGebref,  exportCebius, gebrefHolen, gebrefUrl, checkBoxNurOberbergLaden):
     print("ausführen wurde aufgerufen!")
 
@@ -215,8 +234,12 @@ def ausfuehren(importGebref,  exportCebius, gebrefHolen, gebrefUrl, checkBoxNurO
             print("Tabellen ausgeben für: " + str(gemeinde))
             StrassentabelleAusgeben(gemeinde[0], gemeinde[1])
             HausnummerntabelleAusgeben(gemeinde[0], gemeinde[1])
+
+    AktualitätenAusgeben()
+
     cur.close()
     conn.close()
+
     exit()
 
 
@@ -233,3 +256,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# Merker erstellen:
+# select distinct landschl,regbezschl,kreisschl,gmdschl,gmd from gebref
+
