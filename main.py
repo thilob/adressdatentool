@@ -201,7 +201,25 @@ def AktualitätenAusgeben():
         min=curmin.fetchall()
         for amin in min:
             print(amin[0] + " - " + amin[1])
+            
 
+def GemeindekennungenAusgeben():
+    SQL="select distinct landschl,regbezschl,kreisschl,gmdschl,gmd, kreis from gebref order by landschl, regbezschl, kreisschl,gmdschl"  
+    curgemeinde=conn.cursor()
+    curgemeinde.execute(SQL)
+    F2 = open("./output/__Gemeindekennungen.txt", "w", encoding="windows-1252", newline='\r\n')
+    gemeinden=curgemeinde.fetchall()
+    for gemeinde in gemeinden:
+        zeile = gemeinde["landschl"] + ";" + gemeinde["regbezschl"] + ";" + gemeinde["kreisschl"]+ ";" + gemeinde["gmdschl"] + ";-;" + gemeinde["gmd"]
+        F2.write(zeile)
+    F2.close()
+
+    
+    
+    gemeinden=curgemeinde.fetchall()
+    for gemeinde in gemeinden:
+        print (gemeinde[0] + ";" + gemeinde[1] + ";"  + gemeinde[2] + ";"  + gemeinde[3] + ";" + gemeinde[5] + ";")
+        
 
 def ausfuehren(importGebref,  exportCebius, gebrefHolen, gebrefUrl, checkBoxNurOberbergLaden):
     print("ausführen wurde aufgerufen!")
@@ -236,15 +254,13 @@ def ausfuehren(importGebref,  exportCebius, gebrefHolen, gebrefUrl, checkBoxNurO
             HausnummerntabelleAusgeben(gemeinde[0], gemeinde[1])
 
     AktualitätenAusgeben()
-
+    GemeindekennungenAusgeben()
     cur.close()
     conn.close()
 
     exit()
 
 
-def GemeindenamenUndKennungenAusgeben():
-    exit()
 
 
 def main():
