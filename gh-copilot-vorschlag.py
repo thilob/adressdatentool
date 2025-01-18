@@ -190,6 +190,57 @@ def print_police_car():
 \033[0m
     """
     print(police_car)
+    
+    
+def GemeindelisteAusgeben(gdf):
+    """
+    Gruppiert und sortiert die Daten nach den angegebenen Spalten und speichert sie in einer Datei.
+
+    Args:
+        gdf (GeoDataFrame): Das GeoDataFrame, das die Daten enthält.
+        filename (str): Der Name der Datei, in die die gruppierten und sortierten Daten gespeichert werden sollen.
+    """
+    filename='output/__Gemeindeliste.csv'
+    grouped_sorted_df = gdf.groupby(['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd']).size().reset_index(name='count')
+    grouped_sorted_df = grouped_sorted_df.sort_values(by=['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd'])
+    grouped_sorted_df.to_csv(filename, index=False, sep=';', encoding='utf-8')
+    print(f"Gruppierte und sortierte Daten wurden in '{filename}' gespeichert.")
+
+def save_gmd_str_values(kreis_value, gdf):
+    """
+    Speichert alle eindeutigen Werte aus 'str', die zu 'gmd' gehören, in einer Textdatei.
+
+    Args:
+        kreis_value (str): Der Wert aus der Spalte 'kreis', nach dem gefiltert werden soll.
+    """
+    # Filtere die Daten nach dem angegebenen 'kreis'-Wert
+    filtered_gdf = gdf[gdf['kreis'] == kreis_value]
+
+    # Ermittle alle eindeutigen Werte aus 'gmd', die zu 'kreis' gehören
+    unique_gmd_values = filtered_gdf['gmd'].unique()
+
+    for gmd_value in unique_gmd_values:
+        # Filtere die Daten nach dem aktuellen 'gmd'-Wert
+        gmd_filtered_gdf = filtered_gdf[filtered_gdf['gmd'] == gmd_value]
+
+        # Ermittle alle eindeutigen Werte aus 'str', die zu 'gmd' gehören
+        unique_str_values = gmd_filtered_gdf['str'].unique()
+
+        # Erstelle eine Textdatei mit dem Namen aus 'gmd'
+        filename = f"output/{gmd_value}_str.txt"
+        with open(filename, 'w', encoding='utf-8') as file:
+            for str_value in unique_str_values:
+                file.write(f"{str_value}\n")
+
+        print(f"Alle Werte aus 'str', die zu '{gmd_value}' gehören, wurden in '{filename}' gespeichert.")
+        # Erstelle eine zweite Textdatei mit dem Namen aus 'gmd' + "Hausnummern"
+        filename_hnr = f"output/{gmd_value}_Hausnummern.txt"
+        with open(filename_hnr, 'w', encoding='utf-8') as file:
+            for _, row in gmd_filtered_gdf.iterrows():
+                file.write(f"{row['hnr']};{row['geometry'].x};{row['geometry'].y}\n")
+
+        print(f"Alle Hausnummern und Geokoordinaten, die zu '{gmd_value}' gehören, wurden in '{filename_hnr}' gespeichert.")
+
 
 def main():
     """
@@ -208,6 +259,9 @@ def main():
     if filter_value is None:
         print("Keine Auswahl getroffen. Programm wird beendet.")
         return
+    else:
+        GemeindelisteAusgeben(processor.gdf)
+        save_gmd_str_values(filter_value, processor.gdf)
     
     # Filtern und sortieren
     sort_columns = ['land', 'gmd']  # Beispielspalten zum Sortieren
