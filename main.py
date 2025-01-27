@@ -19,10 +19,10 @@ Der Cursor wird anschließend im weiteren Programm verwendet.
 print("Programm gestartet")
 
  # Verbindungsparameter
-dbname = "cebisdaten"
-user = "cebisdaten"
-password = "cebisdaten"
-host = "Localhost"
+dbname = "cebiusdaten"
+user = "cebiusdaten"
+password = "cebiusdaten"
+host = "127.0.0.1"
 port = "5432"
 conn = psycopg2.connect(
     dbname=dbname,
@@ -30,7 +30,7 @@ conn = psycopg2.connect(
     password=password,
     host=host,
     port=port,
-    options='-c client_encoding=WIN1252'
+    #options='-c client_encoding=WIN1252'
 )
 
 cur = conn.cursor()
