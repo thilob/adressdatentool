@@ -1,5 +1,6 @@
 import os
 import shutil
+from slugify import slugify
 import requests
 import pandas as pd
 import geopandas as gpd
@@ -127,6 +128,24 @@ class GeoDataProcessor:
         if os.path.exists('gebref.zip'):
             os.remove('gebref.zip')
 
+
+    def output_leeren(self):
+        """
+        Löscht alle Dateien im Unterverzeichnis 'output'.
+        """
+        output_dir = 'output'
+        for filename in os.listdir(output_dir):
+            file_path = os.path.join(output_dir, filename)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                    print(f"Datei '{file_path}' wurde gelöscht.")
+            except Exception as e:
+                print(f"Fehler beim Löschen der Datei '{file_path}': {e}")
+
+
+
+
 def display_paginated_list(items, page_size=20):
     """
     Zeigt eine paginierte Liste von Elementen an und ermöglicht die Auswahl eines Elements.
@@ -192,7 +211,7 @@ def print_police_car():
     print(police_car)
     
     
-def GemeindelisteAusgeben(gdf):
+def GemeindelisteAusgeben(gdf,landkreis):
     """
     Gruppiert und sortiert die Daten nach den angegebenen Spalten und speichert sie in einer Datei.
 
@@ -201,7 +220,8 @@ def GemeindelisteAusgeben(gdf):
         filename (str): Der Name der Datei, in die die gruppierten und sortierten Daten gespeichert werden sollen.
     """
     filename='output/__Gemeindeliste.txt'
-    grouped_sorted_df = gdf.groupby(['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd']).size().reset_index(name='count')
+    filtered_gdf = gdf[gdf['kreis'] == landkreis]
+    grouped_sorted_df = filtered_gdf.groupby(['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd']).size().reset_index(name='count')
     grouped_sorted_df = grouped_sorted_df.sort_values(by=['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd'])
 #    grouped_sorted_df.to_csv(filename, index=False, sep=';', encoding='utf-8')
     with open(filename, 'w', encoding='utf-8') as file:
@@ -226,30 +246,40 @@ def save_gmd_str_values(kreis_value, gdf):
     for gmd_value in unique_gmd_values:
         # Filtere die Daten nach dem aktuellen 'gmd'-Wert
         gmd_filtered_gdf = filtered_gdf[filtered_gdf['gmd'] == gmd_value]
-
-        # Ermittle alle eindeutigen Werte aus 'str', die zu 'gmd' gehören
-        unique_str_values = gmd_filtered_gdf['str'].unique()
-
+        gmd_filtered_gdf= gmd_filtered_gdf.groupby(['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd','strschl','str']).size().reset_index(name='count')
+        gmd_filtered_gdf= gmd_filtered_gdf.sort_values(by=['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd','strschl','str'])
+    
         # Erstelle eine Textdatei mit dem Namen aus 'gmd'
-        filename = f"output/{gmd_value}_str.txt"
+        filename = ("output/" + slugify(f"{kreis_value}_{gmd_value}") + "_strassen.txt")
         with open(filename, 'w', encoding='utf-8') as file:
-            for str_value in unique_str_values:
-                file.write(f"{str_value}\n")
+            for _, zeile in gmd_filtered_gdf.iterrows():
+                file.write(f"{int(zeile['landschl']):02d};{zeile['regbezschl']};{zeile['kreisschl']};{int(zeile['gmdschl']):03d};{zeile['strschl']};0;{zeile['str']}\n")    
+        print(f"Alle Straßen aus '{gmd_value}' wurden in '{filename}' gespeichert.")
 
-        print(f"Alle Werte aus 'str', die zu '{gmd_value}' gehören, wurden in '{filename}' gespeichert.")
+
+
+
+
         # Erstelle eine zweite Textdatei mit dem Namen aus 'gmd' + "Hausnummern"
-        filename_hnr = f"output/{gmd_value}_Hausnummern.txt"
+        filename_hnr = ("output/" + slugify(f"{kreis_value}_{gmd_value}") + "_hausnummern.txt")
 # The code snippet you provided is writing the house numbers (`hnr`) along with the corresponding
 # geographical coordinates (latitude and longitude) of each row in the filtered GeoDataFrame
 # (`gmd_filtered_gdf`) to a text file.
+        gmd_filtered_gdf = filtered_gdf[filtered_gdf['gmd'] == gmd_value]
+        gmd_filtered_gdf= gmd_filtered_gdf.groupby(['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd','strschl','str','hnr','adz','geometry']).size().reset_index(name='count')
+        gmd_filtered_gdf= gmd_filtered_gdf.sort_values(by=['landschl', 'regbezschl', 'kreisschl', 'gmdschl', 'gmd','strschl','str','hnr','adz','geometry'])
+
         with open(filename_hnr, 'w', encoding='utf-8') as file:
-            for _, row in gmd_filtered_gdf.iterrows():
+            for _, zeile in gmd_filtered_gdf.iterrows():
              #   print("Spaltennamen:", gmd_filtered_gdf.columns.tolist())
-                file.write(f"{row['hnr']};{row['geometry'].x};{row['geometry'].y}\n")
+
+                file.write(f"{int(zeile['landschl']):02d};{zeile['regbezschl']};{zeile['kreisschl']};{int(zeile['gmdschl']):03d};{zeile['strschl']};{zeile['hnr']};{zeile['adz']};{zeile['geometry'].x};{zeile['geometry'].y};A;00\n")    
+#                file.write(f"{row['hnr']};{row['geometry'].x};{row['geometry'].y}\n")
 # row['hnr'] = f"{int(row['hnr']):03d}"  # Formatieren der Hausnummern als 3-stellige Zahlen
 # row['hnr'] = f"{row['hnr']:>20}"  # Formatieren der Hausnummern als rechtsbündige Strings
 
         print(f"Alle Hausnummern und Geokoordinaten, die zu '{gmd_value}' gehören, wurden in '{filename_hnr}' gespeichert.")
+
 
 
 def main():
@@ -259,7 +289,7 @@ def main():
     processor = GeoDataProcessor(url)
     processor.download_and_extract()
     processor.load_data()
-    
+    processor.output_leeren()
     # Gruppieren und sortieren
     group_column = 'kreis'  # Gruppieren nach der Spalte 'kreis'
     grouped_values = processor.group_and_sort(group_column)
@@ -270,13 +300,14 @@ def main():
         print("Keine Auswahl getroffen. Programm wird beendet.")
         return
     else:
-        GemeindelisteAusgeben(processor.gdf)
+        GemeindelisteAusgeben(processor.gdf,filter_value)
         save_gmd_str_values(filter_value, processor.gdf)
     
     # Filtern und sortieren
-    sort_columns = ['land', 'gmd']  # Beispielspalten zum Sortieren
+    sort_columns = ['land', 'gmdschl','strschl']  # Beispielspalten zum Sortieren
     processor.filter_and_sort_data(group_column, filter_value, sort_columns)
-    processor.save_data()
+    
+    #processor.save_data()
     processor.clean_up()
 
     # ASCII-Grafik eines Polizeiautos ausgeben
