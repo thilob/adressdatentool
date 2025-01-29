@@ -30,7 +30,7 @@ conn = psycopg2.connect(
     password=password,
     host=host,
     port=port,
-    #options='-c client_encoding=WIN1252'
+    options='-c client_encoding=WIN1252'
 )
 
 cur = conn.cursor()

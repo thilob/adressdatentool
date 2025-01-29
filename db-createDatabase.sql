@@ -3,15 +3,8 @@ DROP DATABASE IF EXISTS cebiusdaten;
 CREATE DATABASE cebiusdaten
     WITH
     OWNER = cebiusdaten
-    ENCODING = 'UTF8'
-    LC_COLLATE = 'German_Germany.1252'
-    LC_CTYPE = 'German_Germany.1252'
-    BUILTIN_LOCALE = 'C.UTF-8'
-    LOCALE_PROVIDER = 'builtin'
     TABLESPACE = pg_default
-    CONNECTION LIMIT = -1
-    IS_TEMPLATE = False;
-
+    
 GRANT CREATE, CONNECT ON DATABASE cebiusdaten TO cebiusdaten;
 GRANT TEMPORARY ON DATABASE cebiusdaten TO cebiusdaten WITH GRANT OPTION;
 
