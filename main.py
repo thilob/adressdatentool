@@ -1,4 +1,5 @@
 """Importe"""
+
 import os
 import shutil
 import requests
@@ -26,10 +27,10 @@ class GeoDataProcessor:
         5. Anzeigen der gruppierten und sortierten Werte und Auswahl eines Landkreises.
         6. Speichern der Gemeindeliste des ausgewählten Landkreises in der Datei __Gemeindeliste.txt.
         7. Speichern aller Straßen und Hausnummern des ausgewählten Landkreises in separaten Dateien.
-        
+
     Attribute:
         gdf (GeoDataFrame): Das GeoDataFrame, das die geladenen und verarbeiteten Daten enthält.
-        url (str): Die URL zum Herunterladen der Gebäudereferenzen. 
+        url (str): Die URL zum Herunterladen der Gebäudereferenzen.
     """
 
     def __init__(self, url):
@@ -48,11 +49,15 @@ class GeoDataProcessor:
         oder älter als 24 Stunden ist.
         """
         download = False
-        if not os.path.exists("gebref.txt"): # Prüfen, ob die Datei 'gebref.txt' vorhanden ist
+        if not os.path.exists(
+            "gebref.txt"
+        ):  # Prüfen, ob die Datei 'gebref.txt' vorhanden ist
             download = True
         else:
             file_mod_time = datetime.fromtimestamp(os.path.getmtime("gebref.txt"))
-            if datetime.now() - file_mod_time > timedelta(hours=24): # Prüfen, ob die Datei älter als 24 Stunden ist
+            if datetime.now() - file_mod_time > timedelta(
+                hours=24
+            ):  # Prüfen, ob die Datei älter als 24 Stunden ist
                 download = True
 
         if download:
@@ -75,7 +80,7 @@ class GeoDataProcessor:
         Lädt die Daten aus der Datei 'gebref.txt' und verarbeitet sie.
         """
         chunks = []
-        expected_columns = [   # Entspricht den Spaltennamen in der Datei 'gebref.txt'
+        expected_columns = [  # Entspricht den Spaltennamen in der Datei 'gebref.txt'
             "nba",
             "oid",
             "qua",
@@ -136,14 +141,14 @@ class GeoDataProcessor:
             )
         df.columns = expected_columns
         print("Spaltennamen:", df.columns)  # Ausgabe der Spaltennamen
-        self.gdf = gpd.GeoDataFrame( # Ost- und Nordwert werden in einen Geopandas-GeoDataFrame umgewandelt
+        self.gdf = gpd.GeoDataFrame(  # Ost- und Nordwert werden in einen Geopandas-GeoDataFrame umgewandelt
             df, geometry=gpd.points_from_xy(df["ostwert"], df["nordwert"])
         )
         self.gdf = self.gdf.set_crs(
-            "EPSG:25832"    # Im Original werden die Geodaten im Koordinatensystem EPSG:25832 ("UTM 32N") geliefert
+            "EPSG:25832"  # Im Original werden die Geodaten im Koordinatensystem EPSG:25832 ("UTM 32N") geliefert
         )
         self.gdf = self.gdf.to_crs(
-            "EPSG:31466"          # Transformieren in das von Cebius verwendete Koordinatensystem EPSG:31466 ("Gauss-Krüger 2")
+            "EPSG:31466"  # Transformieren in das von Cebius verwendete Koordinatensystem EPSG:31466 ("Gauss-Krüger 2")
         )
         print(self.gdf)
 
@@ -194,8 +199,7 @@ class GeoDataProcessor:
             except Exception as e:
                 print(f"Fehler beim Löschen der Datei '{file_path}': {e}")
 
-
-    def GemeindelisteAusgeben(self,gdf, landkreis):
+    def GemeindelisteAusgeben(self, gdf, landkreis):
         """
         Gruppiert und sortiert die Daten nach 'landschl', 'regbezschl', 'kreisschl', 'gmdschl' und 'gmd' und speichert sie in einer Textdatei.
         Die Textdatei wird von Cebius als Referenz zwischen Gemeindename und verschiedener Schlüsselnummern benötigt.
@@ -224,7 +228,7 @@ class GeoDataProcessor:
 
         print(f"Gemeindeliste mit Schlüsselwerten wurden in '{filename}' gespeichert.")
 
-    def save_gmd_str_values(self,kreis_value, gdf):
+    def save_gmd_str_values(self, kreis_value, gdf):
         """
         Speichert alle Straßen einer Gemeinde in einer Textdatei und alle Hausnummern mit Geokoordinaten in einer zweiten Textdatei.
 
@@ -326,13 +330,12 @@ class GeoDataProcessor:
             )
 
     def clearScreen(self):
-        if os.name == 'nt': # for windows
-            _ = os.system('cls')
+        if os.name == "nt":  # for windows
+            _ = os.system("cls")
         # for mac and linux(here, os.name is 'posix')
         else:
-            _ = os.system('clear')
-        
-            
+            _ = os.system("clear")
+
     def HinweiseAusgeben(self):
         """Gibt die Hinweise zum Programmstart aus."""
         self.clearScreen()
@@ -340,8 +343,7 @@ class GeoDataProcessor:
         print("=================================================")
         print()
 
-
-    def display_paginated_list(self,items, page_size=20):
+    def display_paginated_list(self, items, page_size=20):
         """
         Zeigt eine paginierte Liste von Elementen an und ermöglicht die Auswahl eines Elements.
 
@@ -407,7 +409,7 @@ class GeoDataProcessor:
                         )
                     )
                 break
-            
+
 
 def main():
     """
@@ -440,5 +442,7 @@ def main():
 
     """_summary_
     """
+
+
 if __name__ == "__main__":
     main()
