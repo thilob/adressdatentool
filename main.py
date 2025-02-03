@@ -361,6 +361,7 @@ class GeoDataProcessor:
             end_index = start_index + page_size
             page_items = items[start_index:end_index]
             self.clearScreen()
+            self.HinweiseAusgeben()
             table = Table(title=f"Seite {current_page + 1} von {total_pages}")
             table.add_column("Nummer", justify="right", style="cyan", no_wrap=True)
             table.add_column("Wert", style="magenta")
