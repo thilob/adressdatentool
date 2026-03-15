@@ -18,6 +18,18 @@ Stand: 15.03.2026
 
 Das Projekt ist für einen Build mit PyInstaller im Modus `--onedir` vorbereitet.
 
+## GUI
+
+Die Anwendung laeuft jetzt als Desktop-GUI auf Basis von `PySide6`.
+Alle Kernfunktionen der bisherigen Textoberflaeche sind weiterhin vorhanden:
+
+- Gebaeudereferenzen pruefen oder herunterladen
+- Komplettes Einlesen und Aufbereiten der Datendatei
+- Auswahl eines Landkreises
+- Export von `__Gemeindeliste.txt` sowie Strassen- und Hausnummerndateien
+
+Die paginierte Auswahl aus der TUI wurde durch eine filterbare, scrollbare Liste ersetzt.
+
 ### Vorbereitung
 
 ```bash

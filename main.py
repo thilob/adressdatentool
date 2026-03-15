@@ -1,120 +1,92 @@
-"""Importe"""
+"""Desktop-GUI fuer das Cebius-Hausnummerntool."""
 
 import os
 import shutil
 import sys
-from pathlib import Path
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
 import requests
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
+from PySide6 import QtCore, QtGui, QtWidgets
 from slugify import slugify
-from tqdm import tqdm
 
 
-url = "https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt/gebref_txt/gebref_EPSG25832_ASCII.zip"
+URL = "https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt/gebref_txt/gebref_EPSG25832_ASCII.zip"
 
 
 def get_runtime_dir():
-    """
-    Liefert das Verzeichnis, in dem Script oder gebündelte Anwendung liegen.
-    """
+    """Liefert das Verzeichnis der Script- oder Bundle-Datei."""
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent
 
 
 class GeoDataProcessor:
-    """
-    Eine Klasse zur Verarbeitung von Geodaten zum Zwecke des Hausnummernimports in eCebius.
-    Der Ablauf skizziert sich wie folgt:
-        1. Ist eine Gebäudereferenzdatei (gebref.txt) vorhanden und aktuell?
-        2. Herunterladen und Entpacken der Gebäudereferenzen, falls erforderlich.
-        3. Laden der Daten aus der Datei 'gebref.txt' und Verarbeitung in einem GeoDataFrame.
-        4. Gruppieren und Sortieren der Daten nach Land, Regierungsbezirk und Landkreis.
-        5. Anzeigen der gruppierten und sortierten Werte und Auswahl eines Landkreises.
-        6. Speichern der Gemeindeliste des ausgewählten Landkreises in der Datei __Gemeindeliste.txt.
-        7. Speichern aller Straßen und Hausnummern des ausgewählten Landkreises in separaten Dateien.
+    """Dateibasierte Verarbeitung der Gebaeudereferenzdaten."""
 
-    Attribute:
-        gdf (GeoDataFrame): Das GeoDataFrame, das die geladenen und verarbeiteten Daten enthält.
-        url (str): Die URL zum Herunterladen der Gebäudereferenzen.
-    """
-
-    def __init__(self, url):
-        """
-        Initialisiert die GeoDataProcessor-Klasse mit der angegebenen URL.
-
-        Args:
-            url (str): Die URL zum Herunterladen der Daten.
-        """
+    def __init__(self, url, log_callback=None, progress_callback=None):
         self.url = url
         self.gdf = None
         self.runtime_dir = get_runtime_dir()
         self.gebref_path = self.runtime_dir / "gebref.txt"
         self.gebref_zip_path = self.runtime_dir / "gebref.zip"
         self.output_dir = self.runtime_dir / "output"
+        self.log_callback = log_callback or (lambda _message: None)
+        self.progress_callback = progress_callback or (lambda _value, _text=None: None)
+
+    def log(self, message):
+        self.log_callback(message)
+
+    def set_progress(self, value, text=None):
+        self.progress_callback(value, text)
 
     def ensure_output_dir(self):
-        """
-        Erstellt das Ausgabeverzeichnis bei Bedarf.
-        """
         self.output_dir.mkdir(exist_ok=True)
 
     def download_and_extract(self):
-        """
-        Lädt die Gebäudereferenzdaten herunter und extrahiert sie, wenn die Datei 'gebref.txt' nicht vorhanden ist
-        oder älter als 24 Stunden ist.
-
-        Returns:
-            bool: True, wenn die Daten lokal verfügbar sind, sonst False.
-        """
+        """Laedt die Datendatei bei Bedarf herunter."""
         download = False
         self.ensure_output_dir()
-        if not self.gebref_path.exists():  # Prüfen, ob die Datei 'gebref.txt' vorhanden ist
+        if not self.gebref_path.exists():
             download = True
         else:
             file_mod_time = datetime.fromtimestamp(self.gebref_path.stat().st_mtime)
-            if datetime.now() - file_mod_time > timedelta(
-                hours=24
-            ):  # Prüfen, ob die Datei älter als 24 Stunden ist
+            if datetime.now() - file_mod_time > timedelta(hours=24):
                 download = True
 
-        if download:
-            print("Gebäudereferenzen werden heruntergeladen....")
-            try:
-                r = requests.get(self.url, allow_redirects=True, timeout=120)
-                r.raise_for_status()
-                with self.gebref_zip_path.open("wb") as f:
-                    f.write(r.content)
-                print("Gebäudereferenzen werden entpackt...")
-                shutil.unpack_archive(
-                    str(self.gebref_zip_path), extract_dir=str(self.runtime_dir)
-                )
-                print("Gebäudereferenzen wurden entpackt!")
-            except requests.RequestException as exc:
-                print(
-                    "Fehler beim Herunterladen der Gebäudereferenzen. "
-                    "Bitte Netzwerkverbindung prüfen oder gebref.txt neben dem Programm ablegen."
-                )
-                print(f"Details: {exc}")
-                return False
-        else:
-            print(
-                "Die Datei 'gebref.txt' ist bereits vorhanden und aktuell. Es wird keine neue Datei heruntergeladen."
+        if not download:
+            self.log("gebref.txt ist bereits vorhanden und aktuell.")
+            return True
+
+        self.log("Gebaeudereferenzen werden heruntergeladen...")
+        self.set_progress(5, "Download gestartet")
+        try:
+            response = requests.get(self.url, allow_redirects=True, timeout=120)
+            response.raise_for_status()
+            with self.gebref_zip_path.open("wb") as handle:
+                handle.write(response.content)
+            self.log("Download abgeschlossen. Archiv wird entpackt...")
+            shutil.unpack_archive(
+                str(self.gebref_zip_path),
+                extract_dir=str(self.runtime_dir),
             )
-        return self.gebref_path.exists()
+            self.log("Gebaeudereferenzen wurden entpackt.")
+            self.set_progress(15, "Download abgeschlossen")
+            return True
+        except requests.RequestException as exc:
+            self.log(
+                "Fehler beim Herunterladen. Bitte Netzwerk pruefen oder gebref.txt "
+                "neben dem Programm ablegen."
+            )
+            self.log(f"Details: {exc}")
+            return False
 
     def load_data(self):
-        """
-        Lädt die Daten aus der Datei 'gebref.txt' und verarbeitet sie.
-        """
+        """Laedt gebref.txt in ein GeoDataFrame."""
         chunks = []
-        expected_columns = [  # Entspricht den Spaltennamen in der Datei 'gebref.txt'
+        expected_columns = [
             "nba",
             "oid",
             "qua",
@@ -137,20 +109,15 @@ class GeoDataProcessor:
             "nordwert",
             "datum",
         ]
-        """Verarbeitung in Chunks
 
-            Der folgende Abschnitt liest die große Datenmenge in Chunks von 10000 Zeilen ein und überprüft die Anzahl der Spalten.
-            Fehlerhafte Spalten werden auf dem Bildschirm ausgegeben.
-            Die Verwendung von Chunks erfolgt wegen der deutlich besseren Performance gegenüber zeilenweiem Einlesen 
-            oder der Verwendung einer zusätzlichen Datenbank.
-            
-        """
-        with self.gebref_path.open("r", encoding="utf-8") as file:
-            total_lines = sum(1 for line in file)
-            file.seek(0)
-            for chunk in tqdm(
+        self.log("gebref.txt wird eingelesen...")
+        with self.gebref_path.open("r", encoding="utf-8") as handle:
+            total_lines = sum(1 for _ in handle)
+            handle.seek(0)
+            total_chunks = max(1, total_lines // 10000)
+            for index, chunk in enumerate(
                 pd.read_csv(
-                    file,
+                    handle,
                     header=None,
                     sep=";",
                     chunksize=10000,
@@ -158,172 +125,95 @@ class GeoDataProcessor:
                     on_bad_lines="skip",
                     encoding="utf-8",
                 ),
-                total=total_lines // 10000,
-                desc="Einlesen der Datei ",
+                start=1,
             ):
                 if len(chunk.columns) != len(expected_columns):
-                    print(f"Fehlerhafte Zeile: {chunk}")
-                    raise ValueError(
-                        "Fehlerhafte Zeile gefunden. Die Zeile wird übersprungen."
-                    )
+                    raise ValueError("Fehlerhafte Zeile gefunden. Bitte Quelldaten pruefen.")
                 chunks.append(chunk)
+                percent = 15 + int((index / total_chunks) * 55)
+                self.set_progress(min(percent, 70), f"Daten einlesen ({index}/{total_chunks})")
 
         df = pd.concat(chunks, ignore_index=True)
         if len(df.columns) != len(expected_columns):
             raise ValueError(
-                f"Anzahl der Spalten stimmt nicht überein. Erwartet: {len(expected_columns)}, Gefunden: {len(df.columns)}"
+                "Anzahl der Spalten stimmt nicht mit dem erwarteten Format ueberein."
             )
+
         df.columns = expected_columns
-        print("Spaltennamen:", df.columns)  # Ausgabe der Spaltennamen
-        self.gdf = gpd.GeoDataFrame(  # Ost- und Nordwert werden in einen Geopandas-GeoDataFrame umgewandelt
-            df, geometry=gpd.points_from_xy(df["ostwert"], df["nordwert"])
-        )
-        self.gdf = self.gdf.set_crs(
-            "EPSG:25832"  # Im Original werden die Geodaten im Koordinatensystem EPSG:25832 ("UTM 32N") geliefert
-        )
-        self.gdf = self.gdf.to_crs(
-            "EPSG:31466"  # Transformieren in das von Cebius verwendete Koordinatensystem EPSG:31466 ("Gauss-Krüger 2")
-        )
-        print(self.gdf)
+        self.log("Koordinaten werden in ein GeoDataFrame ueberfuehrt...")
+        self.gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["ostwert"], df["nordwert"]))
+        self.gdf = self.gdf.set_crs("EPSG:25832")
+        self.gdf = self.gdf.to_crs("EPSG:31466")
+        self.set_progress(80, "Daten aufbereitet")
+        self.log(f"{len(self.gdf):,} Datensaetze geladen.")
 
-    def group_and_sort(self, group_column):
-        """
-        Gruppiert und sortiert die Daten nach der angegebenen Spalte.
-
-        Args:
-            group_column (str): Die Spalte, nach der gruppiert und sortiert werden soll.
-
-        Returns:
-            list: Eine Liste der gruppierten und sortierten Werte.
-        """
+    def get_grouped_values(self, group_column):
         grouped = self.gdf[group_column].value_counts().sort_index()
         return grouped.index.tolist()
 
     def filter_and_sort_data(self, filter_column, filter_value, sort_columns):
-        """
-        Filtert und sortiert die Daten nach den angegebenen Spalten.
-
-        Args:
-            filter_column (str): Die Spalte, nach der gefiltert werden soll.
-            filter_value (str): Der Wert, nach dem gefiltert werden soll.
-            sort_columns (list): Die Spalten, nach denen sortiert werden soll.
-        """
-        self.gdf = self.gdf[self.gdf[filter_column] == filter_value].sort_values(
-            by=sort_columns
-        )
+        self.gdf = self.gdf[self.gdf[filter_column] == filter_value].sort_values(by=sort_columns)
 
     def clean_up(self):
-        """
-        Entfernt die heruntergeladene ZIP-Datei.
-        """
         if self.gebref_zip_path.exists():
             self.gebref_zip_path.unlink()
 
-    def output_leeren(self):
-        """
-        Löscht alle Dateien im Unterverzeichnis 'output'.
-        """
+    def clear_output(self):
         self.ensure_output_dir()
-        for filename in os.listdir(self.output_dir):
-            file_path = self.output_dir / filename
-            try:
-                if file_path.is_file():
-                    file_path.unlink()
-                    print(f"Datei '{file_path}' wurde gelöscht.")
-            except Exception as e:
-                print(f"Fehler beim Löschen der Datei '{file_path}': {e}")
+        for file_path in self.output_dir.iterdir():
+            if file_path.is_file():
+                file_path.unlink()
+        self.log("Ausgabeverzeichnis wurde geleert.")
 
-    def GemeindelisteAusgeben(self, gdf, landkreis):
-        """
-        Gruppiert und sortiert die Daten nach 'landschl', 'regbezschl', 'kreisschl', 'gmdschl' und 'gmd' und speichert sie in einer Textdatei.
-        Die Textdatei wird von Cebius als Referenz zwischen Gemeindename und verschiedener Schlüsselnummern benötigt.
-
-        Args:
-            gdf (GeoDataFrame): Das GeoDataFrame, das die Daten enthält.
-            filename (str): Der Name der Datei, in die die gruppierten und sortierten Daten gespeichert werden sollen.
-        """
+    def export_gemeindeliste(self, gdf, landkreis):
         filename = self.output_dir / "__Gemeindeliste.txt"
         filtered_gdf = gdf[gdf["kreis"] == landkreis]
         grouped_sorted_df = (
-            filtered_gdf.groupby(
-                ["landschl", "regbezschl", "kreisschl", "gmdschl", "gmd"]
-            )
+            filtered_gdf.groupby(["landschl", "regbezschl", "kreisschl", "gmdschl", "gmd"])
             .size()
             .reset_index(name="count")
+            .sort_values(by=["landschl", "regbezschl", "kreisschl", "gmdschl", "gmd"])
         )
-        grouped_sorted_df = grouped_sorted_df.sort_values(
-            by=["landschl", "regbezschl", "kreisschl", "gmdschl", "gmd"]
-        )
-        with filename.open("w", encoding="utf-8") as file:
-            for _, zeile in grouped_sorted_df.iterrows():
-                file.write(
-                    f"{int(zeile['landschl']):02d};{zeile['regbezschl']};{zeile['kreisschl']};{int(zeile['gmdschl']):03d};-;{zeile['gmd']}\n"
+        with filename.open("w", encoding="utf-8") as handle:
+            for _, row in grouped_sorted_df.iterrows():
+                handle.write(
+                    f"{int(row['landschl']):02d};{row['regbezschl']};{row['kreisschl']};"
+                    f"{int(row['gmdschl']):03d};-;{row['gmd']}\n"
                 )
+        self.log(f"Gemeindeliste gespeichert: {filename.name}")
 
-        print(f"Gemeindeliste mit Schlüsselwerten wurden in '{filename}' gespeichert.")
-
-    def save_gmd_str_values(self, kreis_value, gdf):
-        """
-        Speichert alle Straßen einer Gemeinde in einer Textdatei und alle Hausnummern mit Geokoordinaten in einer zweiten Textdatei.
-
-        Args:
-            kreis_value (str): Der Wert aus der Spalte 'kreis', nach dem gefiltert werden soll.
-        """
-        # Filtere die Daten nach dem angegebenen 'kreis'-Wert
+    def export_strassen_und_hausnummern(self, kreis_value, gdf):
         filtered_gdf = gdf[gdf["kreis"] == kreis_value]
-
-        # Ermittle alle eindeutigen Werte aus 'gmd', die zu 'kreis' gehören
         unique_gmd_values = filtered_gdf["gmd"].unique()
+        total = max(1, len(unique_gmd_values))
 
-        for gmd_value in unique_gmd_values:
-            # Filtere die Daten nach dem aktuellen 'gmd'-Wert
+        for index, gmd_value in enumerate(unique_gmd_values, start=1):
             gmd_filtered_gdf = filtered_gdf[filtered_gdf["gmd"] == gmd_value]
-            gmd_filtered_gdf = (
+            grouped_streets = (
                 gmd_filtered_gdf.groupby(
-                    [
-                        "landschl",
-                        "regbezschl",
-                        "kreisschl",
-                        "gmdschl",
-                        "gmd",
-                        "strschl",
-                        "str",
-                    ]
+                    ["landschl", "regbezschl", "kreisschl", "gmdschl", "gmd", "strschl", "str"]
                 )
                 .size()
                 .reset_index(name="count")
-            )
-            gmd_filtered_gdf = gmd_filtered_gdf.sort_values(
-                by=[
-                    "landschl",
-                    "regbezschl",
-                    "kreisschl",
-                    "gmdschl",
-                    "gmd",
-                    "strschl",
-                    "str",
-                ]
+                .sort_values(
+                    by=["landschl", "regbezschl", "kreisschl", "gmdschl", "gmd", "strschl", "str"]
+                )
             )
 
-            # Bewahrt das bisherige Dateinamenschema mit Umlauten und Trenner-Unterstrich.
             base_filename = (
                 f"{slugify(kreis_value, allow_unicode=True)}_"
                 f"{slugify(gmd_value, allow_unicode=True)}"
             )
 
-            # Erstellt eine Textdatei mit allen Straßen einer Gemeinde samt Schlüsselwerten
             filename = self.output_dir / f"{base_filename}_strassen.txt"
-            with filename.open("w", encoding="utf-8") as file:
-                for _, zeile in gmd_filtered_gdf.iterrows():
-                    file.write(
-                        f"{int(zeile['landschl']):02d};{zeile['regbezschl']};{zeile['kreisschl']};{int(zeile['gmdschl']):03d};{zeile['strschl']};0;{zeile['str']}\n"
+            with filename.open("w", encoding="utf-8") as handle:
+                for _, row in grouped_streets.iterrows():
+                    handle.write(
+                        f"{int(row['landschl']):02d};{row['regbezschl']};{row['kreisschl']};"
+                        f"{int(row['gmdschl']):03d};{row['strschl']};0;{row['str']}\n"
                     )
-            print(f"Alle Straßen aus '{gmd_value}' wurden in '{filename}' gespeichert.")
 
-            # Erstellt eine zweite Textdatei mit den Hausnummernkoordinaten aller Straßen einer Gemeinde
-            filename_hnr = self.output_dir / f"{base_filename}_hausnummern.txt"
-            gmd_filtered_gdf = filtered_gdf[filtered_gdf["gmd"] == gmd_value]
-            gmd_filtered_gdf = (
+            grouped_numbers = (
                 gmd_filtered_gdf.groupby(
                     [
                         "landschl",
@@ -340,146 +230,380 @@ class GeoDataProcessor:
                 )
                 .size()
                 .reset_index(name="count")
-            )
-            gmd_filtered_gdf = gmd_filtered_gdf.sort_values(
-                by=[
-                    "landschl",
-                    "regbezschl",
-                    "kreisschl",
-                    "gmdschl",
-                    "gmd",
-                    "strschl",
-                    "str",
-                    "hnr",
-                    "adz",
-                    "geometry",
-                ]
+                .sort_values(
+                    by=[
+                        "landschl",
+                        "regbezschl",
+                        "kreisschl",
+                        "gmdschl",
+                        "gmd",
+                        "strschl",
+                        "str",
+                        "hnr",
+                        "adz",
+                        "geometry",
+                    ]
+                )
             )
 
-            with filename_hnr.open("w", encoding="utf-8") as file:
-                for _, zeile in gmd_filtered_gdf.iterrows():
-                    file.write(
-                        f"{int(zeile['landschl']):02d};{zeile['regbezschl']};{zeile['kreisschl']};{int(zeile['gmdschl']):03d};{zeile['strschl']};{zeile['hnr']};{zeile['adz']};{zeile['geometry'].x};{zeile['geometry'].y};A;00\n"
+            filename_hnr = self.output_dir / f"{base_filename}_hausnummern.txt"
+            with filename_hnr.open("w", encoding="utf-8") as handle:
+                for _, row in grouped_numbers.iterrows():
+                    handle.write(
+                        f"{int(row['landschl']):02d};{row['regbezschl']};{row['kreisschl']};"
+                        f"{int(row['gmdschl']):03d};{row['strschl']};{row['hnr']};{row['adz']};"
+                        f"{row['geometry'].x};{row['geometry'].y};A;00\n"
                     )
-            print(
-                f"Alle Hausnummern und Geokoordinaten, die zu '{gmd_value}' gehören, wurden in '{filename_hnr}' gespeichert."
-            )
 
-    def clearScreen(self):
-        if os.name == "nt":  # for windows
-            _ = os.system("cls")
-        # for mac and linux(here, os.name is 'posix')
+            progress = 80 + int((index / total) * 20)
+            self.set_progress(progress, f"Exportiere {gmd_value}")
+            self.log(f"Dateien fuer {gmd_value} erstellt.")
+
+
+class ProcessorSignals(QtCore.QObject):
+    log = QtCore.Signal(str)
+    progress = QtCore.Signal(int, str)
+    prepared = QtCore.Signal(list, str)
+    exported = QtCore.Signal(str)
+    failed = QtCore.Signal(str)
+
+
+class ProcessorWorker(QtCore.QRunnable):
+    def __init__(self, mode, selected_kreis=None):
+        super().__init__()
+        self.mode = mode
+        self.selected_kreis = selected_kreis
+        self.signals = ProcessorSignals()
+
+    @QtCore.Slot()
+    def run(self):
+        processor = GeoDataProcessor(
+            URL,
+            log_callback=self.signals.log.emit,
+            progress_callback=self.signals.progress.emit,
+        )
+        try:
+            if not processor.download_and_extract():
+                self.signals.failed.emit(
+                    "Keine Gebaeudereferenzdaten verfuegbar. Download oder lokale Datei fehlen."
+                )
+                return
+            processor.load_data()
+            grouped_values = processor.get_grouped_values("kreis")
+
+            if self.mode == "prepare":
+                processor.clean_up()
+                self.signals.progress.emit(100, "Bereit")
+                self.signals.prepared.emit(grouped_values, str(processor.output_dir))
+                return
+
+            if not self.selected_kreis:
+                raise ValueError("Es wurde kein Landkreis ausgewaehlt.")
+
+            processor.clear_output()
+            processor.export_gemeindeliste(processor.gdf, self.selected_kreis)
+            processor.export_strassen_und_hausnummern(self.selected_kreis, processor.gdf)
+            processor.filter_and_sort_data("kreis", self.selected_kreis, ["land", "gmdschl", "strschl"])
+            processor.clean_up()
+            self.signals.progress.emit(100, "Export abgeschlossen")
+            self.signals.exported.emit(str(processor.output_dir))
+        except Exception as exc:  # pragma: no cover - GUI Fehlerpfad
+            self.signals.failed.emit(str(exc))
+
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.thread_pool = QtCore.QThreadPool.globalInstance()
+        self.kreise = []
+        self.selected_kreis = None
+        self.output_dir = str(get_runtime_dir() / "output")
+        self.setWindowTitle("Cebius-Hausnummerntool")
+        self.resize(1180, 760)
+        self._build_ui()
+        self._apply_style()
+        self.append_log("Bereit. Daten koennen geladen werden.")
+
+    def _build_ui(self):
+        central = QtWidgets.QWidget()
+        root = QtWidgets.QVBoxLayout(central)
+        root.setContentsMargins(24, 24, 24, 24)
+        root.setSpacing(18)
+
+        hero = QtWidgets.QFrame()
+        hero.setObjectName("hero")
+        hero_layout = QtWidgets.QVBoxLayout(hero)
+        hero_layout.setContentsMargins(22, 22, 22, 22)
+        title = QtWidgets.QLabel("Cebius-Hausnummerntool")
+        title.setObjectName("title")
+        subtitle = QtWidgets.QLabel(
+            "Dateibasierte Verarbeitung der NRW-Gebaeudereferenzen mit scrollbarer Auswahl statt TUI-Blaettern."
+        )
+        subtitle.setWordWrap(True)
+        subtitle.setObjectName("subtitle")
+        hero_layout.addWidget(title)
+        hero_layout.addWidget(subtitle)
+        root.addWidget(hero)
+
+        content = QtWidgets.QHBoxLayout()
+        content.setSpacing(18)
+        root.addLayout(content, 1)
+
+        left_panel = QtWidgets.QFrame()
+        left_panel.setObjectName("panel")
+        left_layout = QtWidgets.QVBoxLayout(left_panel)
+        left_layout.setContentsMargins(18, 18, 18, 18)
+        left_layout.setSpacing(12)
+
+        button_row = QtWidgets.QHBoxLayout()
+        self.prepare_button = QtWidgets.QPushButton("Daten laden")
+        self.export_button = QtWidgets.QPushButton("Export starten")
+        self.export_button.setEnabled(False)
+        button_row.addWidget(self.prepare_button)
+        button_row.addWidget(self.export_button)
+        left_layout.addLayout(button_row)
+
+        self.progress_label = QtWidgets.QLabel("Noch keine Daten geladen.")
+        self.progress_bar = QtWidgets.QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        left_layout.addWidget(self.progress_label)
+        left_layout.addWidget(self.progress_bar)
+
+        output_card = QtWidgets.QLabel(f"Ausgabeordner: {self.output_dir}")
+        output_card.setObjectName("hint")
+        output_card.setWordWrap(True)
+        left_layout.addWidget(output_card)
+
+        self.search_edit = QtWidgets.QLineEdit()
+        self.search_edit.setPlaceholderText("Landkreis filtern...")
+        left_layout.addWidget(self.search_edit)
+
+        self.kreis_list = QtWidgets.QListWidget()
+        self.kreis_list.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
+        self.kreis_list.setAlternatingRowColors(True)
+        left_layout.addWidget(self.kreis_list, 1)
+
+        self.selection_label = QtWidgets.QLabel("Kein Landkreis ausgewaehlt.")
+        self.selection_label.setObjectName("hint")
+        self.selection_label.setWordWrap(True)
+        left_layout.addWidget(self.selection_label)
+
+        right_panel = QtWidgets.QFrame()
+        right_panel.setObjectName("panel")
+        right_layout = QtWidgets.QVBoxLayout(right_panel)
+        right_layout.setContentsMargins(18, 18, 18, 18)
+        right_layout.setSpacing(12)
+
+        info_title = QtWidgets.QLabel("Ablauf")
+        info_title.setObjectName("sectionTitle")
+        right_layout.addWidget(info_title)
+
+        steps = QtWidgets.QLabel(
+            "1. Gebaeudereferenzen pruefen oder herunterladen.\n"
+            "2. Datei komplett einlesen und Landkreise bereitstellen.\n"
+            "3. Landkreis in der scrollbaren Liste waehlen.\n"
+            "4. Gemeindeliste sowie Strassen- und Hausnummern-Dateien erzeugen."
+        )
+        steps.setWordWrap(True)
+        steps.setObjectName("hint")
+        right_layout.addWidget(steps)
+
+        log_title = QtWidgets.QLabel("Statusprotokoll")
+        log_title.setObjectName("sectionTitle")
+        right_layout.addWidget(log_title)
+
+        self.log_view = QtWidgets.QPlainTextEdit()
+        self.log_view.setReadOnly(True)
+        self.log_view.setMaximumBlockCount(1000)
+        right_layout.addWidget(self.log_view, 1)
+
+        content.addWidget(left_panel, 3)
+        content.addWidget(right_panel, 2)
+
+        self.setCentralWidget(central)
+
+        self.prepare_button.clicked.connect(self.prepare_data)
+        self.export_button.clicked.connect(self.export_selected)
+        self.search_edit.textChanged.connect(self.filter_kreise)
+        self.kreis_list.currentTextChanged.connect(self.update_selection)
+
+    def _apply_style(self):
+        self.setStyleSheet(
+            """
+            QWidget {
+                background: #f3efe5;
+                color: #1f2a24;
+                font-family: "Noto Sans", "DejaVu Sans", sans-serif;
+                font-size: 14px;
+            }
+            QFrame#hero {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #123524, stop:1 #2d5a3d);
+                border-radius: 22px;
+            }
+            QLabel#title {
+                color: #f8f1dd;
+                font-size: 30px;
+                font-weight: 700;
+            }
+            QLabel#subtitle {
+                color: #d6e4d6;
+                font-size: 15px;
+            }
+            QFrame#panel {
+                background: #fcfaf5;
+                border: 1px solid #d8cfbe;
+                border-radius: 18px;
+            }
+            QLabel#sectionTitle {
+                font-size: 18px;
+                font-weight: 700;
+                color: #294736;
+            }
+            QLabel#hint {
+                color: #546357;
+                line-height: 1.4em;
+            }
+            QPushButton {
+                background: #1f5c3f;
+                color: white;
+                border: none;
+                border-radius: 12px;
+                padding: 10px 16px;
+                font-weight: 700;
+            }
+            QPushButton:disabled {
+                background: #98a79d;
+                color: #e9ece9;
+            }
+            QPushButton:hover:!disabled {
+                background: #26724f;
+            }
+            QLineEdit, QListWidget, QPlainTextEdit {
+                background: #fffdf9;
+                border: 1px solid #d9d0c1;
+                border-radius: 12px;
+                padding: 8px;
+            }
+            QListWidget::item {
+                padding: 8px;
+                border-radius: 8px;
+            }
+            QListWidget::item:selected {
+                background: #d9ead7;
+                color: #173324;
+            }
+            QProgressBar {
+                background: #ebe4d7;
+                border: none;
+                border-radius: 8px;
+                text-align: center;
+                min-height: 16px;
+            }
+            QProgressBar::chunk {
+                background: #bc7a2c;
+                border-radius: 8px;
+            }
+            """
+        )
+
+    def append_log(self, message):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.log_view.appendPlainText(f"[{timestamp}] {message}")
+
+    def set_busy(self, busy, label):
+        self.prepare_button.setEnabled(not busy)
+        self.export_button.setEnabled(not busy and bool(self.selected_kreis))
+        self.kreis_list.setEnabled(not busy)
+        self.search_edit.setEnabled(not busy)
+        self.progress_label.setText(label)
+
+    def prepare_data(self):
+        self.progress_bar.setValue(0)
+        self.kreis_list.clear()
+        self.kreise = []
+        self.selected_kreis = None
+        self.selection_label.setText("Kein Landkreis ausgewaehlt.")
+        self.set_busy(True, "Daten werden vorbereitet...")
+        self.append_log("Datenvorbereitung gestartet.")
+        self.run_worker("prepare")
+
+    def export_selected(self):
+        if not self.selected_kreis:
+            QtWidgets.QMessageBox.information(self, "Landkreis waehlen", "Bitte zuerst einen Landkreis auswaehlen.")
+            return
+        self.progress_bar.setValue(0)
+        self.set_busy(True, f"Export fuer {self.selected_kreis} gestartet...")
+        self.append_log(f"Export gestartet fuer {self.selected_kreis}.")
+        self.run_worker("export", self.selected_kreis)
+
+    def run_worker(self, mode, selected_kreis=None):
+        worker = ProcessorWorker(mode, selected_kreis)
+        worker.signals.log.connect(self.append_log)
+        worker.signals.progress.connect(self.update_progress)
+        worker.signals.prepared.connect(self.on_prepared)
+        worker.signals.exported.connect(self.on_exported)
+        worker.signals.failed.connect(self.on_failed)
+        self.thread_pool.start(worker)
+
+    @QtCore.Slot(int, str)
+    def update_progress(self, value, text):
+        self.progress_bar.setValue(value)
+        self.progress_label.setText(text)
+
+    @QtCore.Slot(list, str)
+    def on_prepared(self, kreise, output_dir):
+        self.kreise = kreise
+        self.output_dir = output_dir
+        self.filter_kreise(self.search_edit.text())
+        self.set_busy(False, "Landkreise geladen.")
+        self.append_log(f"{len(kreise)} Landkreise stehen zur Auswahl.")
+
+    @QtCore.Slot(str)
+    def on_exported(self, output_dir):
+        self.output_dir = output_dir
+        self.set_busy(False, "Export abgeschlossen.")
+        self.append_log(f"Export abgeschlossen. Dateien liegen in {output_dir}.")
+        QtWidgets.QMessageBox.information(
+            self,
+            "Export abgeschlossen",
+            f"Die Ausgabedateien wurden in\n{output_dir}\nerstellt.",
+        )
+
+    @QtCore.Slot(str)
+    def on_failed(self, message):
+        self.set_busy(False, "Fehler aufgetreten.")
+        self.append_log(f"Fehler: {message}")
+        QtWidgets.QMessageBox.critical(self, "Fehler", message)
+
+    def filter_kreise(self, text):
+        current = self.selected_kreis
+        self.kreis_list.clear()
+        needle = text.casefold().strip()
+        for kreis in self.kreise:
+            if not needle or needle in kreis.casefold():
+                self.kreis_list.addItem(kreis)
+        if current:
+            matches = self.kreis_list.findItems(current, QtCore.Qt.MatchExactly)
+            if matches:
+                self.kreis_list.setCurrentItem(matches[0])
+
+    def update_selection(self, text):
+        self.selected_kreis = text or None
+        if self.selected_kreis:
+            self.selection_label.setText(f"Ausgewaehlter Landkreis: {self.selected_kreis}")
         else:
-            _ = os.system("clear")
-
-    def HinweiseAusgeben(self):
-        """Gibt die Hinweise zum Programmstart aus."""
-        self.clearScreen()
-        print("Cebius-Hausnummerntool - Thilo Berger, 2025")
-        print("=================================================")
-        print()
-
-    def display_paginated_list(self, items, page_size=20):
-        """
-        Zeigt eine paginierte Liste von Elementen an und ermöglicht die Auswahl eines Elements.
-
-        Args:
-            items (list): Die Liste der anzuzeigenden Elemente.
-            page_size (int): Die Anzahl der Elemente pro Seite.
-
-        Returns:
-            str: Das ausgewählte Element oder None, wenn keine Auswahl getroffen wurde.
-        """
-        console = Console()
-        total_pages = (len(items) + page_size - 1) // page_size
-        current_page = 0
-
-        while True:
-            start_index = current_page * page_size
-            end_index = start_index + page_size
-            page_items = items[start_index:end_index]
-            self.clearScreen()
-            self.HinweiseAusgeben()
-            table = Table(title=f"Seite {current_page + 1} von {total_pages}")
-            table.add_column("Nummer", justify="right", style="cyan", no_wrap=True)
-            table.add_column("Wert", style="magenta")
-
-            for i, item in enumerate(page_items, start=start_index + 1):
-                table.add_row(str(i), str(item))
-
-            console.print(table)
-
-            if current_page < total_pages - 1:
-                next_page = console.input(
-                    "Drücken Sie Enter für die nächste Seite, geben Sie die Nummer zum Auswählen ein oder 'q' zum Beenden: "
-                )
-                if next_page.lower() == "q":
-                    return None
-                elif next_page.isdigit() and int(next_page) in range(
-                    start_index + 1, end_index + 1
-                ):
-                    return items[int(next_page) - 1]
-                else:
-                    console.print(
-                        Panel(
-                            "Ungültige Eingabe. Bitte versuchen Sie es erneut.",
-                            style="red",
-                        )
-                    )
-                current_page += 1
-            else:
-                selection = console.input(
-                    "Geben Sie die Nummer zum Auswählen ein oder 'q' zum Beenden: "
-                )
-                if selection.lower() == "q":
-                    return None
-                elif selection.isdigit() and int(selection) in range(
-                    start_index + 1, end_index + 1
-                ):
-                    return items[int(selection) - 1]
-                else:
-                    console.print(
-                        Panel(
-                            "Ungültige Eingabe. Bitte versuchen Sie es erneut.",
-                            style="red",
-                        )
-                    )
-                break
+            self.selection_label.setText("Kein Landkreis ausgewaehlt.")
+        self.export_button.setEnabled(bool(self.selected_kreis))
 
 
 def main():
-    """
-    Hauptfunktion des Programms. Führt den gesamten Prozess der Datenverarbeitung durch.
-    """
-    processor = GeoDataProcessor(url)
-    processor.HinweiseAusgeben()
-    if not processor.download_and_extract():
-        print("Programm wird beendet, da keine Gebäudereferenzdaten verfügbar sind.")
-        return
-    processor.load_data()
-    processor.output_leeren()
-    # Gruppieren und sortieren
-    group_column = "kreis"  # Gruppieren nach der Spalte 'kreis'
-    grouped_values = processor.group_and_sort(group_column)
-
-    # Gruppierte und sortierte Werte seitenweise anzeigen und Auswahl treffen
-    filter_value = processor.display_paginated_list(grouped_values)
-    if filter_value is None:
-        print("Keine Auswahl getroffen. Programm wird beendet.")
-        return
-    else:
-        processor.GemeindelisteAusgeben(processor.gdf, filter_value)
-        processor.save_gmd_str_values(filter_value, processor.gdf)
-
-    # Filtern und sortieren
-    sort_columns = ["land", "gmdschl", "strschl"]  # Beispielspalten zum Sortieren
-    processor.filter_and_sort_data(group_column, filter_value, sort_columns)
-
-    # processor.save_data()
-    processor.clean_up()
-
-    """_summary_
-    """
+    app = QtWidgets.QApplication(sys.argv)
+    app.setApplicationName("Cebius-Hausnummerntool")
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
