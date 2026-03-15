@@ -3,6 +3,21 @@
 Gebäudereferenzen können hier abgerufen werden:
 <https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt/gebref_txt/>
 
+Copyright 2026 Thilo Berger
+
+## Lizenz
+
+Dieses Projekt steht unter der **GNU General Public License v3.0 oder spaeter**
+(`GPL-3.0-or-later`).
+
+Das passt zur gewuenschten Vorgabe:
+
+- Der Quellcode darf genutzt, veraendert und weitergegeben werden.
+- Bei Weitergabe veraenderter oder unveraenderter Fassungen muss der Quellcode
+  ebenfalls wieder unter derselben freien Copyleft-Lizenz verfuegbar bleiben.
+
+Der vollstaendige Lizenztext liegt in [COPYING](/home/thilo/p/cebiusdaten/COPYING).
+
 ## Überblick
 
 Die Anwendung laeuft als Desktop-GUI auf Basis von `PySide6` und verarbeitet die

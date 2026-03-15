@@ -10,7 +10,6 @@ hiddenimports = []
 datas = []
 datas += collect_data_files("geopandas")
 datas += collect_data_files("pyproj")
-datas += collect_data_files("PySide6")
 
 binaries = []
 binaries += collect_dynamic_libs("pyproj")

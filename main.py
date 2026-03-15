@@ -363,6 +363,9 @@ class MainWindow(QtWidgets.QMainWindow):
         subtitle.setObjectName("subtitle")
         hero_layout.addWidget(title)
         hero_layout.addWidget(subtitle)
+        copyright_label = QtWidgets.QLabel("Copyright 2026 by Thilo Berger · GNU GPL v3 or later")
+        copyright_label.setObjectName("copyright")
+        hero_layout.addWidget(copyright_label)
         root.addWidget(hero)
 
         content = QtWidgets.QHBoxLayout()
@@ -471,6 +474,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 color: #ebff00;
                 background-color: #0d3b66;
                 font-size: 15px;
+            }
+            QLabel#copyright {
+                color: #d8e3ee;
+                background-color: #0d3b66;
+                font-size: 12px;
+                letter-spacing: 0.03em;
             }
             QFrame#panel {
                 background: #fbfcfd;
