@@ -9,7 +9,7 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 import requests
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 from slugify import slugify
 
 
@@ -35,6 +35,29 @@ class GeoDataProcessor:
         self.output_dir = self.runtime_dir / "output"
         self.log_callback = log_callback or (lambda _message: None)
         self.progress_callback = progress_callback or (lambda _value, _text=None: None)
+        self.expected_columns = [
+            "nba",
+            "oid",
+            "qua",
+            "landschl",
+            "land",
+            "regbezschl",
+            "regbez",
+            "kreisschl",
+            "kreis",
+            "gmdschl",
+            "gmd",
+            "ottschl",
+            "ott",
+            "strschl",
+            "str",
+            "hnr",
+            "adz",
+            "zone",
+            "ostwert",
+            "nordwert",
+            "datum",
+        ]
 
     def log(self, message):
         self.log_callback(message)
@@ -83,76 +106,68 @@ class GeoDataProcessor:
             self.log(f"Details: {exc}")
             return False
 
-    def load_data(self):
-        """Laedt gebref.txt in ein GeoDataFrame."""
-        chunks = []
-        expected_columns = [
-            "nba",
-            "oid",
-            "qua",
-            "landschl",
-            "land",
-            "regbezschl",
-            "regbez",
-            "kreisschl",
-            "kreis",
-            "gmdschl",
-            "gmd",
-            "ottschl",
-            "ott",
-            "strschl",
-            "str",
-            "hnr",
-            "adz",
-            "zone",
-            "ostwert",
-            "nordwert",
-            "datum",
-        ]
-
-        self.log("gebref.txt wird eingelesen...")
+    def _count_total_lines(self):
         with self.gebref_path.open("r", encoding="utf-8") as handle:
-            total_lines = sum(1 for _ in handle)
-            handle.seek(0)
-            total_chunks = max(1, total_lines // 10000)
-            for index, chunk in enumerate(
-                pd.read_csv(
-                    handle,
-                    header=None,
-                    sep=";",
-                    chunksize=10000,
-                    na_filter=False,
-                    on_bad_lines="skip",
-                    encoding="utf-8",
-                ),
-                start=1,
+            return sum(1 for _ in handle)
+
+    def _iter_chunks(self, usecols=None):
+        with self.gebref_path.open("r", encoding="utf-8") as handle:
+            for chunk in pd.read_csv(
+                handle,
+                header=None,
+                sep=";",
+                chunksize=10000,
+                na_filter=False,
+                on_bad_lines="skip",
+                encoding="utf-8",
+                dtype=str,
+                usecols=usecols,
             ):
-                if len(chunk.columns) != len(expected_columns):
-                    raise ValueError("Fehlerhafte Zeile gefunden. Bitte Quelldaten pruefen.")
-                chunks.append(chunk)
-                percent = 15 + int((index / total_chunks) * 55)
-                self.set_progress(min(percent, 70), f"Daten einlesen ({index}/{total_chunks})")
+                yield chunk
 
-        df = pd.concat(chunks, ignore_index=True)
-        if len(df.columns) != len(expected_columns):
-            raise ValueError(
-                "Anzahl der Spalten stimmt nicht mit dem erwarteten Format ueberein."
-            )
+    def load_kreise(self):
+        """Liest nur die Landkreisnamen ein und spart so viel Speicher."""
+        self.log("Landkreise werden speicherschonend aus gebref.txt gelesen...")
+        total_lines = self._count_total_lines()
+        total_chunks = max(1, total_lines // 10000)
+        kreise = set()
+        for index, chunk in enumerate(self._iter_chunks(usecols=[8]), start=1):
+            if len(chunk.columns) != 1:
+                raise ValueError("Spaltenformat der Quelldatei ist unerwartet.")
+            kreise.update(value for value in chunk.iloc[:, 0].tolist() if value)
+            percent = 15 + int((index / total_chunks) * 65)
+            self.set_progress(min(percent, 80), f"Landkreise lesen ({index}/{total_chunks})")
+        result = sorted(kreise)
+        self.log(f"{len(result)} Landkreise wurden gefunden.")
+        return result
 
-        df.columns = expected_columns
-        self.log("Koordinaten werden in ein GeoDataFrame ueberfuehrt...")
+    def load_kreis_data(self, kreis_value):
+        """Laedt nur die Daten eines einzelnen Landkreises."""
+        self.log(f"Daten fuer {kreis_value} werden geladen...")
+        total_lines = self._count_total_lines()
+        total_chunks = max(1, total_lines // 10000)
+        filtered_chunks = []
+
+        for index, chunk in enumerate(self._iter_chunks(), start=1):
+            if len(chunk.columns) != len(self.expected_columns):
+                raise ValueError("Fehlerhafte Zeile gefunden. Bitte Quelldaten pruefen.")
+            chunk.columns = self.expected_columns
+            filtered = chunk[chunk["kreis"] == kreis_value]
+            if not filtered.empty:
+                filtered_chunks.append(filtered.copy())
+            percent = 15 + int((index / total_chunks) * 45)
+            self.set_progress(min(percent, 60), f"Landkreisdaten lesen ({index}/{total_chunks})")
+
+        if not filtered_chunks:
+            raise ValueError(f"Keine Daten fuer {kreis_value} gefunden.")
+
+        df = pd.concat(filtered_chunks, ignore_index=True)
+        self.log(f"{len(df):,} Zeilen fuer {kreis_value} gefunden. Geometrie wird erzeugt...")
         self.gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["ostwert"], df["nordwert"]))
         self.gdf = self.gdf.set_crs("EPSG:25832")
         self.gdf = self.gdf.to_crs("EPSG:31466")
-        self.set_progress(80, "Daten aufbereitet")
-        self.log(f"{len(self.gdf):,} Datensaetze geladen.")
-
-    def get_grouped_values(self, group_column):
-        grouped = self.gdf[group_column].value_counts().sort_index()
-        return grouped.index.tolist()
-
-    def filter_and_sort_data(self, filter_column, filter_value, sort_columns):
-        self.gdf = self.gdf[self.gdf[filter_column] == filter_value].sort_values(by=sort_columns)
+        self.set_progress(75, "Landkreisdaten aufbereitet")
+        self.log(f"{len(self.gdf):,} Datensaetze fuer {kreis_value} geladen.")
 
     def clean_up(self):
         if self.gebref_zip_path.exists():
@@ -259,6 +274,15 @@ class GeoDataProcessor:
             self.set_progress(progress, f"Exportiere {gmd_value}")
             self.log(f"Dateien fuer {gmd_value} erstellt.")
 
+    def export_kreis(self, kreis_value):
+        """Fuehrt den kompletten Export fuer einen Landkreis aus."""
+        self.clear_output()
+        self.load_kreis_data(kreis_value)
+        self.export_gemeindeliste(self.gdf, kreis_value)
+        self.export_strassen_und_hausnummern(kreis_value, self.gdf)
+        self.clean_up()
+        self.gdf = None
+
 
 class ProcessorSignals(QtCore.QObject):
     log = QtCore.Signal(str)
@@ -288,10 +312,9 @@ class ProcessorWorker(QtCore.QRunnable):
                     "Keine Gebaeudereferenzdaten verfuegbar. Download oder lokale Datei fehlen."
                 )
                 return
-            processor.load_data()
-            grouped_values = processor.get_grouped_values("kreis")
 
             if self.mode == "prepare":
+                grouped_values = processor.load_kreise()
                 processor.clean_up()
                 self.signals.progress.emit(100, "Bereit")
                 self.signals.prepared.emit(grouped_values, str(processor.output_dir))
@@ -300,11 +323,7 @@ class ProcessorWorker(QtCore.QRunnable):
             if not self.selected_kreis:
                 raise ValueError("Es wurde kein Landkreis ausgewaehlt.")
 
-            processor.clear_output()
-            processor.export_gemeindeliste(processor.gdf, self.selected_kreis)
-            processor.export_strassen_und_hausnummern(self.selected_kreis, processor.gdf)
-            processor.filter_and_sort_data("kreis", self.selected_kreis, ["land", "gmdschl", "strschl"])
-            processor.clean_up()
+            processor.export_kreis(self.selected_kreis)
             self.signals.progress.emit(100, "Export abgeschlossen")
             self.signals.exported.emit(str(processor.output_dir))
         except Exception as exc:  # pragma: no cover - GUI Fehlerpfad
