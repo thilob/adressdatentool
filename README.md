@@ -1,9 +1,10 @@
 # Adressdatentool
 
+Copyright (C) 2026 Thilo Berger
+Lizenz: `GPL-3.0-or-later`
+
 Gebäudereferenzen können hier abgerufen werden:
 <https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt/gebref_txt/>
-
-Copyright 2026 Thilo Berger
 
 ## Lizenz
 
@@ -17,6 +18,7 @@ Das passt zur gewuenschten Vorgabe:
   ebenfalls wieder unter derselben freien Copyleft-Lizenz verfügbar bleiben.
 
 Der vollstaendige Lizenztext liegt in [COPYING](COPYING).
+Eine kompakte Projekt- und Lizenznotiz liegt in [NOTICE.md](NOTICE.md).
 
 ## Überblick
 

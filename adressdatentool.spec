@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Thilo Berger
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from pathlib import Path
 
 from PyInstaller.utils.hooks import (

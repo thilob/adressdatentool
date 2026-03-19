@@ -1,5 +1,8 @@
 # Release-Checkliste
 
+Copyright (C) 2026 Thilo Berger
+Lizenz: `GPL-3.0-or-later`
+
 Stand: 19.03.2026
 
 ## Vor dem Push

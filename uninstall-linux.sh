@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Copyright (C) 2026 Thilo Berger
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 set -euo pipefail
 
 APP_NAME="adressdatentool"
