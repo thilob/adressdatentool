@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Adressdatentool
+Comment=Dateibasierte Aufbereitung von Adress- und Gebäudereferenzdaten
+Exec=${INSTALL_DIR}/adressdatentool
+Icon=${INSTALL_DIR}/adressdatentool.svg
+Terminal=false
+Categories=Office;Utility;
+StartupNotify=true
+Keywords=Adressdaten;Adressen;Hausnummern;Geodaten;NRW;

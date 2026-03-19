@@ -1,4 +1,4 @@
-# cebiusdaten
+# Adressdatentool
 
 Gebäudereferenzen können hier abgerufen werden:
 <https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt/gebref_txt/>
@@ -16,7 +16,7 @@ Das passt zur gewuenschten Vorgabe:
 - Bei Weitergabe veränderter oder unveränderter Fassungen muss der Quellcode
   ebenfalls wieder unter derselben freien Copyleft-Lizenz verfügbar bleiben.
 
-Der vollstaendige Lizenztext liegt in [COPYING](/home/thilo/p/cebiusdaten/COPYING).
+Der vollstaendige Lizenztext liegt in [COPYING](COPYING).
 
 ## Überblick
 
@@ -66,14 +66,14 @@ Alternativ steht unter Linux auch das Hilfsskript bereit:
 ./build-pyinstaller.sh
 ```
 
-Das Ergebnis liegt danach in `dist/cebiusdaten/`.
-Die startbare Datei liegt unter Linux in `dist/cebiusdaten/cebiusdaten`.
+Das Ergebnis liegt danach in `dist/adressdatentool/`.
+Die startbare Datei liegt unter Linux in `dist/adressdatentool/adressdatentool`.
 
 Verifiziert wurde der aktuelle Linux-Build mit:
 
 ```bash
-./dist/cebiusdaten/cebiusdaten --help
-QT_QPA_PLATFORM=offscreen ./dist/cebiusdaten/cebiusdaten --smoke-test
+./dist/adressdatentool/adressdatentool --help
+QT_QPA_PLATFORM=offscreen ./dist/adressdatentool/adressdatentool --smoke-test
 ```
 
 Hinweis:
@@ -91,9 +91,9 @@ Nach dem Build:
 
 Das Skript erledigt:
 
-- Kopieren des Bundles nach `~/.local/opt/cebiusdaten`
-- Anlegen eines Starters in `~/.local/bin/cebiusdaten`
-- Anlegen eines `.desktop`-Eintrags in `~/.local/share/applications/cebiusdaten.desktop`
+- Kopieren des Bundles nach `~/.local/opt/adressdatentool`
+- Anlegen eines Starters in `~/.local/bin/adressdatentool`
+- Anlegen eines `.desktop`-Eintrags in `~/.local/share/applications/adressdatentool.desktop`
 - Aktualisierung der Desktop-Datenbank, falls verfügbar
 
 Danach sollte die Anwendung im KDE-Anwendungsmenü erscheinen.
@@ -138,7 +138,7 @@ build-windows.bat
 Oder manuell:
 
 ```bat
-.venv\Scripts\pyinstaller.exe --noconfirm --clean cebiusdaten.spec
+.venv\Scripts\pyinstaller.exe --noconfirm --clean adressdatentool.spec
 ```
 
 Ziel dieser Vorbereitung ist ein `--onedir`-Bundle, das möglichst ohne
@@ -149,13 +149,13 @@ auch die Laufzeit-Submodule und Metadaten von `geopandas`, `pyproj` und
 Die erwartete startbare Datei liegt auf Windows in:
 
 ```text
-dist\cebiusdaten\cebiusdaten.exe
+dist\adressdatentool\adressdatentool.exe
 ```
 
 ### Start und Nutzung unter Windows
 
 Nach einem erfolgreichen Windows-Build kann die Anwendung direkt über
-`dist\cebiusdaten\cebiusdaten.exe` gestartet werden.
+`dist\adressdatentool\adressdatentool.exe` gestartet werden.
 
 Ein separater Windows-Installer wird derzeit nicht erzeugt. Das `dist`-
 Verzeichnis muss daher als Ganzes zusammenbleiben.
@@ -178,7 +178,7 @@ vorbereitet.
 ## Release-Hinweise
 
 Eine kompakte Checkliste fuer Build, Verifikation und GitHub-Push liegt in
-[RELEASE.md](/home/thilo/p/cebiusdaten/RELEASE.md).
+[RELEASE.md](RELEASE.md).
 
 Fuer veroeffentlichte Versionen ist kuenftig ein gemeinsames Tag-Schema wie
 `v0.1.1` vorgesehen, unter dem getrennte Linux- und Windows-Assets liegen.

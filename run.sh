@@ -17,4 +17,3 @@ fi
 if command -v xdg-open >/dev/null 2>&1; then
     xdg-open "$ROOT_DIR/output" >/dev/null 2>&1 || true
 fi
-

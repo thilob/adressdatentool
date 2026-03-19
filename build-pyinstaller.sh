@@ -18,4 +18,4 @@ if [[ ! -x ".venv/bin/pyinstaller" ]]; then
     exit 1
 fi
 
-".venv/bin/pyinstaller" --noconfirm --clean cebiusdaten.spec
+".venv/bin/pyinstaller" --noconfirm --clean adressdatentool.spec

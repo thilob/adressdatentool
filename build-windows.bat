@@ -15,4 +15,4 @@ if not exist .venv\Scripts\pyinstaller.exe (
     exit /b 1
 )
 
-.venv\Scripts\pyinstaller.exe --noconfirm --clean cebiusdaten.spec
+.venv\Scripts\pyinstaller.exe --noconfirm --clean adressdatentool.spec

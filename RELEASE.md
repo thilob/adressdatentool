@@ -14,8 +14,8 @@ Stand: 19.03.2026
 3. Build prüfen:
 
 ```bash
-./dist/cebiusdaten/cebiusdaten --help
-QT_QPA_PLATFORM=offscreen ./dist/cebiusdaten/cebiusdaten --smoke-test
+./dist/adressdatentool/adressdatentool --help
+QT_QPA_PLATFORM=offscreen ./dist/adressdatentool/adressdatentool --smoke-test
 ```
 
 4. Optional lokale Benutzerinstallation prüfen:
@@ -32,7 +32,7 @@ python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 .venv\Scripts\pip install pyinstaller
 build-windows.bat
-dist\cebiusdaten\cebiusdaten.exe
+dist\adressdatentool\adressdatentool.exe
 ```
 
 ## GitHub-Push
@@ -47,7 +47,7 @@ git diff
 2. Relevante Dateien stagen:
 
 ```bash
-git add cebiusdaten.spec run.sh README.md RELEASE.md
+git add adressdatentool.spec run.sh README.md RELEASE.md
 ```
 
 3. Commit erstellen:

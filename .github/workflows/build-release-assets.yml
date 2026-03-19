@@ -37,19 +37,19 @@ jobs:
       - name: Package Linux release
         run: |
           set -euo pipefail
-          PKG_DIR="/tmp/cebiusdaten-linux-v${VERSION}"
+          PKG_DIR="/tmp/adressdatentool-linux-v${VERSION}"
           mkdir -p "${PKG_DIR}"
           cp -a dist install-linux.sh uninstall-linux.sh linux assets README.md COPYING RELEASE.md "${PKG_DIR}/"
-          tar -C /tmp -czf "cebiusdaten-linux-v${VERSION}.tar.gz" "cebiusdaten-linux-v${VERSION}"
-          sha256sum "cebiusdaten-linux-v${VERSION}.tar.gz" > "cebiusdaten-linux-v${VERSION}.tar.gz.sha256"
+          tar -C /tmp -czf "adressdatentool-linux-v${VERSION}.tar.gz" "adressdatentool-linux-v${VERSION}"
+          sha256sum "adressdatentool-linux-v${VERSION}.tar.gz" > "adressdatentool-linux-v${VERSION}.tar.gz.sha256"
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-release-assets
           path: |
-            cebiusdaten-linux-v${{ inputs.version }}.tar.gz
-            cebiusdaten-linux-v${{ inputs.version }}.tar.gz.sha256
+            adressdatentool-linux-v${{ inputs.version }}.tar.gz
+            adressdatentool-linux-v${{ inputs.version }}.tar.gz.sha256
 
   build-windows:
     name: Build Windows Asset
@@ -80,11 +80,11 @@ jobs:
       - name: Package Windows release
         shell: pwsh
         run: |
-          $pkgDir = Join-Path $env:RUNNER_TEMP "cebiusdaten-windows-v$env:VERSION"
+          $pkgDir = Join-Path $env:RUNNER_TEMP "adressdatentool-windows-v$env:VERSION"
           New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
           Copy-Item dist -Destination $pkgDir -Recurse
           Copy-Item README.md,COPYING,RELEASE.md -Destination $pkgDir
-          $zipPath = Join-Path $PWD "cebiusdaten-windows-v$env:VERSION.zip"
+          $zipPath = Join-Path $PWD "adressdatentool-windows-v$env:VERSION.zip"
           if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
           Compress-Archive -Path "$pkgDir\*" -DestinationPath $zipPath
           $hash = (Get-FileHash -Algorithm SHA256 $zipPath).Hash.ToLower()
@@ -95,5 +95,5 @@ jobs:
         with:
           name: windows-release-assets
           path: |
-            cebiusdaten-windows-v${{ inputs.version }}.zip
-            cebiusdaten-windows-v${{ inputs.version }}.zip.sha256
+            adressdatentool-windows-v${{ inputs.version }}.zip
+            adressdatentool-windows-v${{ inputs.version }}.zip.sha256

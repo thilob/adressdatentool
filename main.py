@@ -1,4 +1,4 @@
-"""Desktop-GUI für das Cebius-Hausnummerntool."""
+"""Desktop-GUI für das Adressdatentool."""
 
 import argparse
 import os
@@ -338,7 +338,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.kreise = []
         self.selected_kreis = None
         self.output_dir = str(get_runtime_dir() / "output")
-        self.setWindowTitle("Cebius-Hausnummerntool")
+        self.setWindowTitle("Adressdatentool")
         self.resize(1180, 760)
         self._build_ui()
         self._apply_style()
@@ -354,7 +354,7 @@ class MainWindow(QtWidgets.QMainWindow):
         hero.setObjectName("hero")
         hero_layout = QtWidgets.QVBoxLayout(hero)
         hero_layout.setContentsMargins(22, 22, 22, 22)
-        title = QtWidgets.QLabel("Cebius-Hausnummerntool")
+        title = QtWidgets.QLabel("Adressdatentool")
         title.setObjectName("title")
         subtitle = QtWidgets.QLabel(
             "Dateibasierte Verarbeitung der NRW-Gebäudereferenzen mit scrollbarer Auswahl statt TUI-Blättern."
@@ -649,7 +649,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Cebius-Hausnummerntool")
+    parser = argparse.ArgumentParser(description="Adressdatentool")
     parser.add_argument(
         "--smoke-test",
         action="store_true",
@@ -658,7 +658,7 @@ def main():
     args = parser.parse_args()
 
     app = QtWidgets.QApplication(sys.argv)
-    app.setApplicationName("Cebius-Hausnummerntool")
+    app.setApplicationName("Adressdatentool")
     window = MainWindow()
     window.show()
     if args.smoke_test:
