@@ -23,6 +23,12 @@ Der vollstaendige Lizenztext liegt in [COPYING](/home/thilo/p/cebiusdaten/COPYIN
 Die Anwendung läuft als Desktop-GUI auf Basis von `PySide6` und verarbeitet die
 NRW-Gebäudereferenzen dateibasiert ohne Datenbank.
 
+Der Repository-Zustand ist dabei bewusst schlank gehalten:
+
+- Beispiel- und Exportverzeichnisse werden nicht mehr mit ausgeliefert.
+- `output/` entsteht erst zur Laufzeit beim ersten Export.
+- Das distributierbare Artefakt ist ein PyInstaller-`--onedir`-Bundle.
+
 Die bisherigen Kernfunktionen der TUI bleiben erhalten:
 
 - Gebäudereferenzen prüfen oder herunterladen
@@ -47,6 +53,12 @@ python -m venv .venv
 .venv/bin/python main.py
 ```
 
+Alternativ steht unter Linux auch das Hilfsskript bereit:
+
+```bash
+./run.sh
+```
+
 ### Build des distributierbaren Bundles
 
 ```bash
@@ -55,6 +67,19 @@ python -m venv .venv
 ```
 
 Das Ergebnis liegt danach in `dist/cebiusdaten/`.
+Die startbare Datei liegt unter Linux in `dist/cebiusdaten/cebiusdaten`.
+
+Verifiziert wurde der aktuelle Linux-Build mit:
+
+```bash
+./dist/cebiusdaten/cebiusdaten --help
+QT_QPA_PLATFORM=offscreen ./dist/cebiusdaten/cebiusdaten --smoke-test
+```
+
+Hinweis:
+Im aktuellen Linux-Build gibt PyInstaller weiterhin eine Warnung zu
+`libtiff.so.5` fuer ein optionales Qt-Bildformat-Plugin aus. Der verifizierte
+Programmstart des Bundles wird dadurch derzeit nicht blockiert.
 
 ### Installation als Benutzeranwendung inklusive KDE-Menüeintrag
 
@@ -95,22 +120,42 @@ Oder manuell:
 ```
 
 Ziel dieser Vorbereitung ist ein `--onedir`-Bundle, das möglichst ohne
-nachzuinstallierende Python-Bibliotheken läuft. Verifizieren lässt sich das
-endgültig nur durch einen echten Build und Test auf Windows.
+nachzuinstallierende Python-Bibliotheken läuft. Die Spec sammelt dafür jetzt
+auch die Laufzeit-Submodule und Metadaten von `geopandas`, `pyproj` und
+`shapely` ein.
+
+Die erwartete startbare Datei liegt auf Windows in:
+
+```text
+dist\cebiusdaten\cebiusdaten.exe
+```
+
+Ohne native Windows-Laufzeitumgebung lässt sich das endgültig nicht
+verifizieren; der Buildpfad und die Spec wurden aber plattformneutral dafür
+vorbereitet.
 
 ## Verhalten im Bundle
 
 - Die Anwendung arbeitet relativ zum Verzeichnis der ausfuehrbaren Datei.
-- `gebref.txt`, `gebref.zip` und `output/` liegen neben dem Bundle.
+- `gebref.txt` und `gebref.zip` liegen neben dem Bundle.
+- `output/` wird erst zur Laufzeit bei Bedarf erzeugt und nicht mit ausgeliefert.
 - Falls `gebref.txt` fehlt oder älter als 24 Stunden ist, wird die Datei beim Start heruntergeladen.
 - Der GUI-Start kann mit `--smoke-test` kurz automatisiert getestet werden.
 
+## Release-Hinweise
+
+Eine kompakte Checkliste fuer Build, Verifikation und GitHub-Push liegt in
+[RELEASE.md](/home/thilo/p/cebiusdaten/RELEASE.md).
+
 ## Dokumentierte Änderungen
 
-Stand: 15.03.2026
+Stand: 19.03.2026
 
 - Umstellung auf die dateibasierte `geopandas`-Verarbeitung
 - Desktop-GUI auf Basis von `PySide6`
 - Speicherschonender Landkreis-Ladevorgang für die GUI
 - Vorbereitung für `PyInstaller --onedir` unter Linux und Windows
 - Linux-Installationsskripte inklusive KDE-Menüeintrag
+- PyInstaller-Spec für `geopandas`-, `pyproj`- und `shapely`-Runtime gehärtet
+- Linux-Build erneut verifiziert, inklusive Smoke-Test des Dist-Artefakts
+- Mitgelieferte Output-Verzeichnisse aus dem Repository entfernt
