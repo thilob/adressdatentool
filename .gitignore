@@ -12,3 +12,4 @@ venv/
 gebref.zip
 output/*
 doxygen/
+gebref_anzahl.txt
