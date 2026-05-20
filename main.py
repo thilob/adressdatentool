@@ -4,6 +4,7 @@
 """Desktop-GUI für das Adressdatentool."""
 
 import argparse
+import gc
 import os
 import shutil
 import sys
@@ -166,6 +167,7 @@ class GeoDataProcessor:
             raise ValueError(f"Keine Daten fuer {kreis_value} gefunden.")
 
         df = pd.concat(filtered_chunks, ignore_index=True)
+        del filtered_chunks
         self.log(f"{len(df):,} Zeilen fuer {kreis_value} gefunden. Geometrie wird erzeugt...")
         self.gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["ostwert"], df["nordwert"]))
         self.gdf = self.gdf.set_crs("EPSG:25832")
@@ -176,6 +178,10 @@ class GeoDataProcessor:
     def clean_up(self):
         if self.gebref_zip_path.exists():
             self.gebref_zip_path.unlink()
+
+    def cleanup_memory(self):
+        self.gdf = None
+        gc.collect()
 
     def clear_output(self):
         self.ensure_output_dir()
@@ -278,6 +284,9 @@ class GeoDataProcessor:
             self.set_progress(progress, f"Exportiere {gmd_value}")
             self.log(f"Dateien fuer {gmd_value} erstellt.")
 
+        del filtered_gdf
+        gc.collect()
+
     def export_kreis(self, kreis_value):
         """Fuehrt den kompletten Export fuer einen Landkreis aus."""
         self.clear_output()
@@ -285,7 +294,7 @@ class GeoDataProcessor:
         self.export_gemeindeliste(self.gdf, kreis_value)
         self.export_strassen_und_hausnummern(kreis_value, self.gdf)
         self.clean_up()
-        self.gdf = None
+        self.cleanup_memory()
 
 
 class ProcessorSignals(QtCore.QObject):
@@ -332,6 +341,11 @@ class ProcessorWorker(QtCore.QRunnable):
             self.signals.exported.emit(str(processor.output_dir))
         except Exception as exc:  # pragma: no cover - GUI Fehlerpfad
             self.signals.failed.emit(str(exc))
+        finally:
+            try:
+                processor.cleanup_memory()
+            except Exception:
+                pass
 
 
 class MainWindow(QtWidgets.QMainWindow):
