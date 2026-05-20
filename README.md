@@ -80,7 +80,7 @@ QT_QPA_PLATFORM=offscreen ./dist/adressdatentool/adressdatentool --smoke-test
 
 Hinweis:
 Im aktuellen Linux-Build gibt PyInstaller weiterhin eine Warnung zu
-`libtiff.so.5` fuer ein optionales Qt-Bildformat-Plugin aus. Der verifizierte
+`libtiff.so.5` für ein optionales Qt-Bildformat-Plugin aus. Der verifizierte
 Programmstart des Bundles wird dadurch derzeit nicht blockiert.
 
 ### Installation als Benutzeranwendung inklusive KDE-Menüeintrag
@@ -181,10 +181,10 @@ vorbereitet.
 
 ## Release-Hinweise
 
-Eine kompakte Checkliste fuer Build, Verifikation und GitHub-Push liegt in
+Eine kompakte Checkliste für Build, Verifikation und GitHub-Push liegt in
 [RELEASE.md](RELEASE.md).
 
-Fuer veroeffentlichte Versionen ist kuenftig ein gemeinsames Tag-Schema wie
+Für veröffentlichte Versionen ist künftig ein gemeinsames Tag-Schema wie
 `v0.1.1` vorgesehen, unter dem getrennte Linux- und Windows-Assets liegen.
 
 ## Dokumentierte Änderungen
@@ -197,8 +197,8 @@ Stand: 19.03.2026
 - Vorbereitung für `PyInstaller --onedir` unter Linux und Windows
 - Linux-Installationsskripte inklusive KDE-Menüeintrag
 - Windows-Installation und Windows-Build in der README dokumentiert
-- GitHub-Actions-Workflow fuer Linux- und Windows-Release-Assets vorbereitet
+- GitHub-Actions-Workflow für Linux- und Windows-Release-Assets vorbereitet
 - PyInstaller-Spec für `geopandas`-, `pyproj`- und `shapely`-Runtime gehärtet
 - Linux-Build erneut verifiziert, inklusive Smoke-Test des Dist-Artefakts
 - Mitgelieferte Output-Verzeichnisse aus dem Repository entfernt
-- Release-Build durch Schutzpruefung gegen versehentlich mitverpackte Laufzeitdaten abgesichert
+- Release-Build durch Schutzprüfung gegen versehentlich mitverpackte Laufzeitdaten abgesichert

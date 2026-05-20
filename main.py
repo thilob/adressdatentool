@@ -74,7 +74,7 @@ class GeoDataProcessor:
         self.output_dir.mkdir(exist_ok=True)
 
     def download_and_extract(self):
-        """Laedt die Datendatei bei Bedarf herunter."""
+        """Lädt die Datendatei bei Bedarf herunter."""
         download = False
         self.ensure_output_dir()
         if not self.gebref_path.exists():
@@ -105,7 +105,7 @@ class GeoDataProcessor:
             return True
         except requests.RequestException as exc:
             self.log(
-                "Fehler beim Herunterladen. Bitte Netzwerk pruefen oder gebref.txt "
+                "Fehler beim Herunterladen. Bitte Netzwerk prüfen oder gebref.txt "
                 "neben dem Programm ablegen."
             )
             self.log(f"Details: {exc}")
@@ -147,15 +147,15 @@ class GeoDataProcessor:
         return result
 
     def load_kreis_data(self, kreis_value):
-        """Laedt nur die Daten eines einzelnen Landkreises."""
-        self.log(f"Daten fuer {kreis_value} werden geladen...")
+        """Lädt nur die Daten eines einzelnen Landkreises."""
+        self.log(f"Daten für {kreis_value} werden geladen...")
         total_lines = self._count_total_lines()
         total_chunks = max(1, total_lines // 10000)
         filtered_chunks = []
 
         for index, chunk in enumerate(self._iter_chunks(), start=1):
             if len(chunk.columns) != len(self.expected_columns):
-                raise ValueError("Fehlerhafte Zeile gefunden. Bitte Quelldaten pruefen.")
+                raise ValueError("Fehlerhafte Zeile gefunden. Bitte Quelldaten prüfen.")
             chunk.columns = self.expected_columns
             filtered = chunk[chunk["kreis"] == kreis_value]
             if not filtered.empty:
@@ -164,16 +164,16 @@ class GeoDataProcessor:
             self.set_progress(min(percent, 60), f"Landkreisdaten lesen ({index}/{total_chunks})")
 
         if not filtered_chunks:
-            raise ValueError(f"Keine Daten fuer {kreis_value} gefunden.")
+            raise ValueError(f"Keine Daten für {kreis_value} gefunden.")
 
         df = pd.concat(filtered_chunks, ignore_index=True)
         del filtered_chunks
-        self.log(f"{len(df):,} Zeilen fuer {kreis_value} gefunden. Geometrie wird erzeugt...")
+        self.log(f"{len(df):,} Zeilen für {kreis_value} gefunden. Geometrie wird erzeugt...")
         self.gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["ostwert"], df["nordwert"]))
         self.gdf = self.gdf.set_crs("EPSG:25832")
         self.gdf = self.gdf.to_crs("EPSG:31466")
         self.set_progress(75, "Landkreisdaten aufbereitet")
-        self.log(f"{len(self.gdf):,} Datensaetze fuer {kreis_value} geladen.")
+        self.log(f"{len(self.gdf):,} Datensätze für {kreis_value} geladen.")
 
     def clean_up(self):
         if self.gebref_zip_path.exists():
@@ -282,13 +282,13 @@ class GeoDataProcessor:
 
             progress = 80 + int((index / total) * 20)
             self.set_progress(progress, f"Exportiere {gmd_value}")
-            self.log(f"Dateien fuer {gmd_value} erstellt.")
+            self.log(f"Dateien für {gmd_value} erstellt.")
 
         del filtered_gdf
         gc.collect()
 
     def export_kreis(self, kreis_value):
-        """Fuehrt den kompletten Export fuer einen Landkreis aus."""
+        """Führt den kompletten Export für einen Landkreis aus."""
         self.clear_output()
         self.load_kreis_data(kreis_value)
         self.export_gemeindeliste(self.gdf, kreis_value)
